@@ -60,7 +60,6 @@ body{background:linear-gradient(180deg,#dcfce7 0%,#f0fdf4 40%,#f8fafc 100%);colo
     <div class="acts">
       <button class="bsm" onclick="reqNotif()">🔔 فعال‌سازی اعلان</button>
       <button class="bsm" onclick="testAlrm()">🚨 تست آلارم ۳ روزه</button>
-      <button class="bsm" onclick="resetM()">🔄 شارژ ۳۰ روزه</button>
     </div>
   </div>
   <div class="card">
@@ -108,20 +107,22 @@ function upd(){
 }
 function reqNotif(){if("Notification"in window)Notification.requestPermission().then(p=>{if(p==="granted"){msg("اعلان فعال شد ✅");notif()}})}
 function testAlrm(){localStorage.setItem("bbp_exp",Date.now()+25e7);localStorage.removeItem("bbp_al");beep();notif();upd();msg("آلارم ۳ روزه تست شد 🚨")}
-function resetM(){localStorage.setItem("bbp_exp",Date.now()+M_MS);upd();msg("حساب ۳۰ روز شارژ شد ✅")}
 function selC(n,t,id,ix){curC=n;c1.classList.remove("sel");c2.classList.remove("sel");document.getElementById(id).classList.add("sel");bSel.selectedIndex=ix;navigator.clipboard.writeText(n);msg("کارت "+t+" کپی شد 📋")}
 function copyNow(){navigator.clipboard.writeText(curC);msg("شماره کارت کپی شد! پس از واریز فرم زیر را پر کنید.")}
 function sendR(ch){
   const nm=dName.value.trim(),am=pAmt.value.trim(),bk=bSel.value,tr=tCode.value.trim();
   if(!nm||!am||!tr)return msg("⚠️ نام، مبلغ و کد پیگیری را کامل وارد کنید");
-  localStorage.setItem("bbp_nm",nm);resetM();
+  localStorage.setItem("bbp_nm",nm);
+  // فقط در زمان ارسال رسید پرداخت، روزشمار برای ۳۰ روز آینده تمدید می‌شود
+  localStorage.setItem("bbp_exp",Date.now()+M_MS);
+  upd();
   const dt=new Intl.DateTimeFormat("fa-IR",{dateStyle:"short",timeStyle:"short"}).format(new Date());
   const tx=`✅ *رسید پرداخت باربرگ بندر پی*\n👤 راننده: ${nm}\n💰 مبلغ: ${am} تومان\n🏦 مقصد: ${bk}\n🔢 پیگیری: ${tr}\n📅 تاریخ: ${dt}`;
   if(ch==="wa")window.open("https://wa.me/989373016550?text="+encodeURIComponent(tx),"_blank");
   else location.href="sms:09373016550?body="+encodeURIComponent(tx);
 }
 function msg(t){tst.textContent=t;tst.style.display="block";setTimeout(()=>tst.style.display="none",3e3)}
-dName.value=localStorage.getItem("bbp_nm")||"";upd();setInterval(upd,3e4);
+dName.value=localStorage.getItem("bbp_nm")||"";upd();setInterval(upd,30e3);
 let dp;window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();dp=e;instBtn.style.display="block";instBtn.onclick=()=>{dp.prompt();instBtn.style.display="none"}});
 if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js").catch(()=>{});
 </script>
