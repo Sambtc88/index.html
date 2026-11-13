@@ -141,7 +141,6 @@ const USERS = {
   "09373016550": "1234"
 };
 
-// سیستم ورود: شماره موبایل + رمز (۴ رقم آخر + ۲۰)
 function checkSmartLogin(user, pass) {
   if (USERS[user] && USERS[user] === pass) return true;
   if (/^09\d{9}$/.test(user)) {
@@ -194,27 +193,28 @@ function getExp(){
   return +s;
 }
 
-// سیستم صوتی هوشمند (گوینده زن / فارسی با پشتیبانی از سیستم‌عامل اندروید)
+// سیستم صوتی زنانه قدرتمند با اجبار به فعال‌سازی صدا در WebView اندروید
 function speakVoice(text){
   if ('speechSynthesis' in window) {
+    window.speechSynthesis.resume(); // بیدار کردن موتور صوتی اندروید
     window.speechSynthesis.cancel();
+    
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = 'fa-IR';
-    utterance.rate = 0.95;
-    utterance.pitch = 1.1; // تن صدای زیرتر برای گوینده زن
+    utterance.rate = 0.92; // سرعت روان و واضح
+    utterance.pitch = 1.25; // تن صدای زیرتر و ظریف‌تر (زنانه)
+    utterance.volume = 1.0; // حداکثر بلندی صدا
     
-    // انتخاب صدای زنانه در صورت وجود در موتور صوتی گوشی
     const voices = window.speechSynthesis.getVoices();
-    const faVoice = voices.find(v => v.lang.includes('fa') && (v.name.includes('female') || v.name.includes('Google') || v.name.includes('Zahra') || v.name.includes('Persian')));
-    if (faVoice) {
-      utterance.voice = faVoice;
+    const femaleVoice = voices.find(v => v.lang.includes('fa') && (v.name.includes('female') || v.name.includes('Google') || v.name.includes('Zahra') || v.name.includes('Persian') || v.name.includes('fa-ir')));
+    if (femaleVoice) {
+      utterance.voice = femaleVoice;
     }
     
     window.speechSynthesis.speak(utterance);
   }
 }
 
-// بارگذاری اولیه صداها برای موتور مرورگر
 if ('speechSynthesis' in window) {
   window.speechSynthesis.onvoiceschanged = () => { window.speechSynthesis.getVoices(); };
 }
@@ -275,20 +275,20 @@ function recharge30(){
 function reqNotif(){
   if (!("Notification" in window)) {
     msg("🔔 سیستم اعلان آماده است.");
-    speakVoice("سیستم اعلانات و هشدار صوتی فعال شد.");
+    speakVoice("سیستم اعلانات و هشدار صوتی زنانه فعال شد.");
     return;
   }
   Notification.requestPermission().then(permission => {
     if (permission === "granted") {
       msg("✅ دسترسی به اعلان تایید شد.");
-      speakVoice("سیستم اعلانات و هشدار صوتی فعال شد.");
+      speakVoice("سیستم اعلانات و هشدار صوتی زنانه فعال شد.");
     } else {
       msg("❌ دسترسی به اعلان مسدود است.");
     }
   });
 }
 
-// دکمه تست صوتی ۳ روزه
+// تست صوتی ۳ روزه با صدای گوینده زن
 function testAlrm(){
   speakVoice("کاربر محترم، یادآوری می‌کنیم نوبت واریزی و تمدید اشتراک شما فرا رسیده است.");
   alrt.style.display = "block";
@@ -324,7 +324,7 @@ function sendR(ch){
   localStorage.setItem("bbp_nm", nm);
   updateDriverBadge();
   
-  // به محض ارسال پرداخت، اشتراک ۳۰ روزه تمدید شده و صدای تشکر پخش می‌شود
+  // تمدید خودکار ۳۰ روزه و پخش پیام تشکر صوتی زنانه
   localStorage.setItem("bbp_exp", Date.now() + M_MS);
   localStorage.removeItem("bbp_last_speech");
   speakVoice("بابت پرداختی و تمدید اشتراک از شما تشکر می‌کنیم. حساب شما فعال شد.");
@@ -340,7 +340,7 @@ function msg(t){tst.textContent=t;tst.style.display="block";setTimeout(()=>tst.s
 
 window.addEventListener("DOMContentLoaded", () => {
   checkAuth();
-  const savedName = localStorage.getItem("bbp_nm") || "";
+  const savedName = localStorage.getItem("bbp_nm"] || "";
   document.getElementById("dName").value = savedName;
   if(savedName) document.getElementById("driverNameDisp").textContent = savedName;
   upd();
