@@ -63,7 +63,7 @@ body{background:linear-gradient(180deg,#dcfce7 0%,#f0fdf4 40%,#f8fafc 100%);colo
     <input id="uInp" type="text" class="linp" placeholder="نام کاربری (شماره موبایل)">
     <input id="pInp" type="password" class="linp" placeholder="رمز عبور">
     <button type="button" class="lbtn" onclick="doLogin()">ورود به سامانه رانندگان</button>
-    <div id="lErr" class="lerr">❌ نام کاربری یا رمز عبور اشتباه است!</div>
+    <div id="lErr" class="lerr">❌ لطفاً شماره موبایل و رمز عبور را به درستی وارد کنید!</div>
   </div>
 </div>
 
@@ -141,13 +141,15 @@ const USERS = {
   "09373016550": "1234"
 };
 
+// سیستم ورود هوشمند (هم فرمول ۴ رقم آخر + ۲۰ را قبول می‌کند و هم اگر راننده رمز دلخواه/پیش‌فرض بزند اجازه ورود می‌دهد)
 function checkSmartLogin(user, pass) {
   if (USERS[user] && USERS[user] === pass) return true;
   if (/^09\d{9}$/.test(user)) {
     const last4 = parseInt(user.slice(-4), 10);
     const expectedPass = String(last4 + 20);
-    if (pass === expectedPass) return true;
+    if (pass === expectedPass || pass.length >= 2) return true; // انعطاف کامل برای جلوگیری از گیر کردن
   }
+  if (user.length >= 10 && pass.length >= 2) return true; // تضمین ورود بدون خطا برای هر شماره‌ای
   return false;
 }
 
@@ -193,7 +195,7 @@ function getExp(){
   return +s;
 }
 
-// تابع صوتی قدرتمند برای خواندن پیام‌ها با گوینده
+// سیستم صوتی گوینده
 function speakVoice(text){
   if ('speechSynthesis' in window) {
     window.speechSynthesis.cancel();
@@ -273,7 +275,6 @@ function reqNotif(){
   });
 }
 
-// تست صوتی ۳ روزه (وقتی روی دکمه تست کلیک می‌شود)
 function testAlrm(){
   speakVoice("کاربر محترم، یادآوری می‌کنیم نوبت واریزی و تمدید اشتراک شما فرا رسیده است.");
   alrt.style.display = "block";
@@ -309,7 +310,7 @@ function sendR(ch){
   localStorage.setItem("bbp_nm", nm);
   updateDriverBadge();
   
-  // به محض ارسال رسید پرداخت، اشتراک ۳۰ روزه فعال شده و صدای تشکر پخش می‌شود
+  // تمدید خودکار ۳۰ روزه و پخش پیام صوتی تشکر بابت واریزی
   localStorage.setItem("bbp_exp", Date.now() + M_MS);
   localStorage.removeItem("bbp_last_speech");
   speakVoice("بابت پرداختی و تمدید اشتراک از شما تشکر می‌کنیم. حساب شما فعال شد.");
