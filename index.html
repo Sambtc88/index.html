@@ -40,7 +40,7 @@ body{background:linear-gradient(180deg,#dcfce7 0%,#f0fdf4 40%,#f8fafc 100%);colo
 .bwa{background:#16a34a;color:#fff}.bsms{background:#0f172a;color:#fff}.bpay{background:#eab308;color:#0f172a}
 .tst{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#15803d;color:#fff;padding:10px 18px;border-radius:99px;font-size:.82rem;font-weight:700;display:none;z-index:99999;white-space:nowrap;box-shadow:0 4px 12px rgba(0,0,0,.2)}
 
-/* استایل صفحه ورود (لاگین) */
+/* صفحه ورود */
 #loginModal{position:fixed;inset:0;background:linear-gradient(160deg,#14532d 0%,#15803d 50%,#0f172a 100%);display:flex;align-items:center;justify-content:center;z-index:99999;padding:16px}
 .lbox{background:#fff;width:100%;max-width:380px;border-radius:24px;padding:24px 20px;text-align:center;box-shadow:0 20px 40px rgba(0,0,0,.3);border:2px solid #bbf7d0}
 .lbox img{width:68px;height:68px;border-radius:16px;border:2px solid #15803d;margin-bottom:10px;object-fit:contain}
@@ -55,7 +55,6 @@ body{background:linear-gradient(180deg,#dcfce7 0%,#f0fdf4 40%,#f8fafc 100%);colo
 </head>
 <body>
 
-<!-- صفحه ورود با نام کاربری و رمز عبور -->
 <div id="loginModal">
   <div class="lbox">
     <img src="logo.png" onerror="this.src='https://via.placeholder.com/80/ffffff/15803d?text=BBP'">
@@ -80,7 +79,6 @@ body{background:linear-gradient(180deg,#dcfce7 0%,#f0fdf4 40%,#f8fafc 100%);colo
     </div>
   </div>
 
-  <!-- کارت نمایش نام راننده -->
   <div id="driverBadge" class="driver-badge">
     <span>👤 راننده محترم: <b id="driverNameDisp" style="color:#15803d;">ثبت نشده</b></span>
     <span style="font-size:0.72rem;background:#dcfce7;padding:4px 8px;border-radius:8px;color:#15803d;">فعال ✓</span>
@@ -167,12 +165,9 @@ function doLogin() {
   const uInput = document.getElementById("uInp");
   const pInput = document.getElementById("pInp");
   const errBox = document.getElementById("lErr");
-  
   if(!uInput || !pInput) return;
-  
   const u = uInput.value.trim();
   const p = pInput.value.trim();
-
   if (checkSmartLogin(u, p)) {
     localStorage.setItem("bbp_logged_user", u);
     const m = document.getElementById("loginModal");
@@ -200,18 +195,19 @@ function getExp(){
   return +s;
 }
 
-function beep(){try{const c=new(window.AudioContext||window.webkitAudioContext)();[523,659,784,1046].forEach((f,i)=>{const o=c.createOscillator(),g=c.createGain();o.frequency.value=f;g.gain.setValueAtTime(.2,c.currentTime+i*.18);g.gain.exponentialRampToValueAtTime(.001,c.currentTime+(i+1)*.18);o.connect(g);g.connect(c.destination);o.start(c.currentTime+i*.18);o.stop(c.currentTime+(i+1)*.18)})}catch(e){}}
-
-function notif(){
-  if("Notification" in window){
-    if(Notification.permission === "granted"){
-      try {
-        new Notification("⚠️ یادآوری باربرگ بندر پی",{body:"کمتر از ۳ روز به پایان اعتبار مانده است. لطفاً جهت تمدید اقدام کنید.",icon:"logo.png"});
-      } catch(e) {}
-    } else {
-      Notification.requestPermission();
-    }
-  }
+function beep(){
+  try{
+    const c = new (window.AudioContext || window.webkitAudioContext)();
+    [523,659,784,1046].forEach((f,i)=>{
+      const o = c.createOscillator(), g = c.createGain();
+      o.frequency.value = f;
+      g.gain.setValueAtTime(.2, c.currentTime + i*.18);
+      g.gain.exponentialRampToValueAtTime(.001, c.currentTime + (i+1)*.18);
+      o.connect(g); g.connect(c.destination);
+      o.start(c.currentTime + i*.18);
+      o.stop(c.currentTime + (i+1)*.18);
+    });
+  }catch(e){}
 }
 
 function upd(){
@@ -223,22 +219,32 @@ function upd(){
   expTxt.textContent = "سررسید ماهانه: " + new Intl.DateTimeFormat("fa-IR").format(new Date(exp));
   
   const rBtn = document.getElementById("rchgBtn");
-  if(df <= A_MS){
-    alrt.style.display = "block";
-    pBar.style.background = "#dc2626";
-    bdg.textContent = "نیاز به تمدید فوری!";
-    bdg.style.color = "#dc2626";
-    rBtn.classList.remove("locked");
-    const td = new Date().toDateString();
-    if(localStorage.getItem("bbp_al") !== td){
-      beep(); notif(); localStorage.setItem("bbp_al", td);
-    }
-  } else {
+  
+  // اگر اشتراک بیشتر از ۳ روز اعتبار داشته باشد، هشدار و آلارم به صورت خودکار خاموش/آفلاین است
+  if(df > A_MS){
     alrt.style.display = "none";
     pBar.style.background = "linear-gradient(90deg,#15803d,#22c55e)";
     bdg.textContent = "حساب فعال ✓";
     bdg.style.color = "#15803d";
     rBtn.classList.add("locked");
+  } else {
+    // در ۳ روز پایانی (فقط در صورت عدم پرداخت و تمدید) آلارم و هشدار فعال می‌شود
+    alrt.style.display = "block";
+    pBar.style.background = "#dc2626";
+    bdg.textContent = "نیاز به تمدید فوری!";
+    bdg.style.color = "#dc2626";
+    rBtn.classList.remove("locked");
+    
+    const td = new Date().toDateString();
+    if(localStorage.getItem("bbp_al") !== td){
+      beep();
+      if("Notification" in window && Notification.permission === "granted"){
+        try {
+          new Notification("⚠️ هشدار پایان اعتبار", {body: "کمتر از ۳ روز به پایان اشتراک ماهانه مانده است.", icon: "logo.png"});
+        } catch(e) {}
+      }
+      localStorage.setItem("bbp_al", td);
+    }
   }
 }
 
@@ -249,47 +255,42 @@ function recharge30(){
   }
   if (confirm("آیا واریز را انجام داده‌اید و می‌خواهید اشتراک ۳۰ روزه جدید فعال شود؟")) {
     localStorage.setItem("bbp_exp", Date.now() + M_MS);
-    localStorage.removeItem("bbp_al");
+    localStorage.removeItem("bbp_al"); // ریست خودکار آلارم پس از تمدید
     upd();
     msg("✅ اشتراک شما برای ۳۰ روز آینده شارژ شد");
   }
 }
 
-// تابع جدید و اصلاح شده درخواست اجازه اعلان (باز کردن پاپ‌آپ سیستمی)
 function reqNotif(){
   if (!("Notification" in window)) {
-    msg("سیستم اعلان در این نسخه پشتیبانی می‌شود ✅");
+    msg("🔔 سیستم اعلان آماده است.");
     return;
   }
   
-  if (Notification.permission === "granted") {
-    msg("🔔 اعلانات قبلاً فعال شده‌اند.");
-    try {
-      new Notification("باربرگ بندر پی", {body: "سیستم هشدار و اعلانات فعال است.", icon: "logo.png"});
-    } catch(e) {}
-  } else if (Notification.permission !== "denied") {
-    Notification.requestPermission().then(permission => {
-      if (permission === "granted") {
-        msg("✅ دسترسی به اعلان با موفقیت تایید شد.");
-        try {
-          new Notification("باربرگ بندر پی", {body: "خوش آمدید! اعلانات فعال شدند.", icon: "logo.png"});
-        } catch(e) {}
-      } else {
-        msg("❌ اجازه دسترسی به اعلان داده نشد.");
-      }
-    });
-  } else {
-    msg("⚠️ دسترسی به اعلان مسدود است. از تنظیمات گوشی فعال کنید.");
-  }
+  Notification.requestPermission().then(permission => {
+    if (permission === "granted") {
+      msg("✅ دسترسی به اعلان با موفقیت تایید شد.");
+      try {
+        new Notification("باربرگ بندر پی", {body: "سیستم هشدار و اعلانات فعال شد.", icon: "logo.png"});
+      } catch(e) {}
+    } else {
+      msg("❌ دسترسی به اعلان داده نشد یا مسدود است.");
+    }
+  });
 }
 
 function testAlrm(){
-  beep(); notif();
+  beep();
   alrt.style.display = "block";
   pBar.style.background = "#dc2626";
   bdg.textContent = "نیاز به تمدید فوری! (تست)";
   bdg.style.color = "#dc2626";
   msg("🚨 پیش‌نمایش آلارم ۳ روزه (۵ ثانیه)");
+  if("Notification" in window && Notification.permission === "granted"){
+    try {
+      new Notification("تست آلارم باربرگ", {body: "این یک پیش‌نمایش ۳ روزه است.", icon: "logo.png"});
+    } catch(e) {}
+  }
   setTimeout(() => { upd(); }, 5000);
 }
 
@@ -313,12 +314,10 @@ function sendR(ch){
   localStorage.setItem("bbp_nm", nm);
   updateDriverBadge();
   
-  const df = Math.max(0, getExp() - Date.now());
-  if (df <= A_MS) {
-    localStorage.setItem("bbp_exp", Date.now() + M_MS);
-    localStorage.removeItem("bbp_al");
-    upd();
-  }
+  // به محض ارسال رسید پرداخت، اعتبار ۳۰ روزه جدید تمدید شده و آلارم به طور خودکار خاموش می‌شود
+  localStorage.setItem("bbp_exp", Date.now() + M_MS);
+  localStorage.removeItem("bbp_al"); 
+  upd();
   
   const dt = new Intl.DateTimeFormat("fa-IR",{dateStyle:"short",timeStyle:"short"}).format(new Date());
   const tx = `✅ *رسید پرداخت باربرگ بندر پی*\n👤 راننده: ${nm}\n💰 مبلغ: ${am} تومان\n🏦 مقصد: ${bk}\n🔢 پیگیری: ${tr}\n📅 تاریخ: ${dt}`;
