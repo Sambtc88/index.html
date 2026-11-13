@@ -195,19 +195,16 @@ function getExp(){
   return +s;
 }
 
-function beep(){
-  try{
-    const c = new (window.AudioContext || window.webkitAudioContext)();
-    [523,659,784,1046].forEach((f,i)=>{
-      const o = c.createOscillator(), g = c.createGain();
-      o.frequency.value = f;
-      g.gain.setValueAtTime(.2, c.currentTime + i*.18);
-      g.gain.exponentialRampToValueAtTime(.001, c.currentTime + (i+1)*.18);
-      o.connect(g); g.connect(c.destination);
-      o.start(c.currentTime + i*.18);
-      o.stop(c.currentTime + (i+1)*.18);
-    });
-  }catch(e){}
+// تابع پخش صدای گوینده (Text-to-Speech فارسی)
+function speakVoice(text){
+  if ('speechSynthesis' in window) {
+    window.speechSynthesis.cancel(); // متوقف کردن صداهای قبلی
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = 'fa-IR'; // زبان فارسی
+    utterance.rate = 0.95; // سرعت خواندن طبیعی
+    utterance.pitch = 1.0;
+    window.speechSynthesis.speak(utterance);
+  }
 }
 
 function upd(){
@@ -220,30 +217,33 @@ function upd(){
   
   const rBtn = document.getElementById("rchgBtn");
   
-  // اگر اشتراک بیشتر از ۳ روز اعتبار داشته باشد، هشدار و آلارم به صورت خودکار خاموش/آفلاین است
   if(df > A_MS){
+    // اشتراک فعال است (بیشتر از ۳ روز مانده) -> آلارم و هشدار به صورت خودکار خاموش است
     alrt.style.display = "none";
     pBar.style.background = "linear-gradient(90deg,#15803d,#22c55e)";
     bdg.textContent = "حساب فعال ✓";
     bdg.style.color = "#15803d";
     rBtn.classList.add("locked");
   } else {
-    // در ۳ روز پایانی (فقط در صورت عدم پرداخت و تمدید) آلارم و هشدار فعال می‌شود
+    // ۳ روز پایانی و عدم پرداخت -> فعال شدن هشدار و صدای گوینده (هر ۳۰ دقیقه یکبار در صورت باز بودن برنامه)
     alrt.style.display = "block";
     pBar.style.background = "#dc2626";
     bdg.textContent = "نیاز به تمدید فوری!";
     bdg.style.color = "#dc2626";
     rBtn.classList.remove("locked");
     
-    const td = new Date().toDateString();
-    if(localStorage.getItem("bbp_al") !== td){
-      beep();
+    const now = Date.now();
+    const lastSpoken = Number(localStorage.getItem("bbp_last_speech") || 0);
+    const thirtyMinutes = 30 * 60 * 1000; // ۳۰ دقیقه به میلی‌ثانیه
+    
+    if (now - lastSpoken > thirtyMinutes) {
+      speakVoice("کاربر محترم، یادآوری می‌کنیم نوبت واریزی و تمدید اشتراک شما فرا رسیده است.");
       if("Notification" in window && Notification.permission === "granted"){
         try {
-          new Notification("⚠️ هشدار پایان اعتبار", {body: "کمتر از ۳ روز به پایان اشتراک ماهانه مانده است.", icon: "logo.png"});
+          new Notification("⚠️ هشدار پایان اعتبار", {body: "کاربر محترم، نوبت واریزی شما رسیده است.", icon: "logo.png"});
         } catch(e) {}
       }
-      localStorage.setItem("bbp_al", td);
+      localStorage.setItem("bbp_last_speech", now);
     }
   }
 }
@@ -255,7 +255,8 @@ function recharge30(){
   }
   if (confirm("آیا واریز را انجام داده‌اید و می‌خواهید اشتراک ۳۰ روزه جدید فعال شود؟")) {
     localStorage.setItem("bbp_exp", Date.now() + M_MS);
-    localStorage.removeItem("bbp_al"); // ریست خودکار آلارم پس از تمدید
+    localStorage.removeItem("bbp_last_speech"); // ریست چرخه صدا
+    speakVoice("از پرداخت و تمدید شما سپاسگزاریم، اشتراک شما با موفقیت فعال شد.");
     upd();
     msg("✅ اشتراک شما برای ۳۰ روز آینده شارژ شد");
   }
@@ -266,32 +267,24 @@ function reqNotif(){
     msg("🔔 سیستم اعلان آماده است.");
     return;
   }
-  
   Notification.requestPermission().then(permission => {
     if (permission === "granted") {
-      msg("✅ دسترسی به اعلان با موفقیت تایید شد.");
-      try {
-        new Notification("باربرگ بندر پی", {body: "سیستم هشدار و اعلانات فعال شد.", icon: "logo.png"});
-      } catch(e) {}
+      msg("✅ دسترسی به اعلان تایید شد.");
+      speakVoice("سیستم اعلانات و هشدار صوتی فعال شد.");
     } else {
-      msg("❌ دسترسی به اعلان داده نشد یا مسدود است.");
+      msg("❌ دسترسی به اعلان مسدود است.");
     }
   });
 }
 
 function testAlrm(){
-  beep();
+  speakVoice("کاربر محترم، یادآوری می‌کنیم نوبت واریزی و تمدید اشتراک شما فرا رسیده است.");
   alrt.style.display = "block";
   pBar.style.background = "#dc2626";
   bdg.textContent = "نیاز به تمدید فوری! (تست)";
   bdg.style.color = "#dc2626";
-  msg("🚨 پیش‌نمایش آلارم ۳ روزه (۵ ثانیه)");
-  if("Notification" in window && Notification.permission === "granted"){
-    try {
-      new Notification("تست آلارم باربرگ", {body: "این یک پیش‌نمایش ۳ روزه است.", icon: "logo.png"});
-    } catch(e) {}
-  }
-  setTimeout(() => { upd(); }, 5000);
+  msg("🚨 تست صوتی گوینده انجام شد");
+  setTimeout(() => { upd(); }, 6000);
 }
 
 function selC(n,t,id,ix){curC=n;c1.classList.remove("sel");c2.classList.remove("sel");document.getElementById(id).classList.add("sel");bSel.selectedIndex=ix;navigator.clipboard.writeText(n);msg("کارت "+t+" کپی شد 📋")}
@@ -314,9 +307,10 @@ function sendR(ch){
   localStorage.setItem("bbp_nm", nm);
   updateDriverBadge();
   
-  // به محض ارسال رسید پرداخت، اعتبار ۳۰ روزه جدید تمدید شده و آلارم به طور خودکار خاموش می‌شود
+  // به محض ارسال رسید، اعتبار ۳۰ روزه تمدید شده، صدای هشدار قطع و پیام تشکر پخش می‌شود
   localStorage.setItem("bbp_exp", Date.now() + M_MS);
-  localStorage.removeItem("bbp_al"); 
+  localStorage.removeItem("bbp_last_speech");
+  speakVoice("از پرداخت و تمدید شما سپاسگزاریم، اشتراک شما با موفقیت فعال شد.");
   upd();
   
   const dt = new Intl.DateTimeFormat("fa-IR",{dateStyle:"short",timeStyle:"short"}).format(new Date());
@@ -329,7 +323,7 @@ function msg(t){tst.textContent=t;tst.style.display="block";setTimeout(()=>tst.s
 
 window.addEventListener("DOMContentLoaded", () => {
   checkAuth();
-  const savedName = localStorage.getItem("bbp_nm") || "";
+  const savedName = localStorage.getItem("bbp_nm"] || "";
   document.getElementById("dName").value = savedName;
   if(savedName) document.getElementById("driverNameDisp").textContent = savedName;
   upd();
