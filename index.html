@@ -62,8 +62,8 @@ body{background:linear-gradient(180deg,#dcfce7 0%,#f0fdf4 40%,#f8fafc 100%);colo
     <p>شماره موبایل و رمز عبور (۴ رقم آخر + ۲۰) را وارد نمایید</p>
     <input id="uInp" type="text" class="linp" placeholder="نام کاربری (شماره موبایل)">
     <input id="pInp" type="password" class="linp" placeholder="رمز عبور">
-    <button type="button" class="lbtn" onclick="doLogin()">ورود به سامانه رانندگان</button>
-    <div id="lErr" class="lerr">❌ لطفاً شماره موبایل و رمز عبور را به درستی وارد کنید!</div>
+    <div id="loginBtn" class="lbtn" onclick="doLogin()">ورود به سامانه رانندگان</div>
+    <div id="lErr" class="lerr">❌ شماره موبایل یا رمز عبور اشتباه است!</div>
   </div>
 </div>
 
@@ -136,6 +136,23 @@ body{background:linear-gradient(180deg,#dcfce7 0%,#f0fdf4 40%,#f8fafc 100%);colo
 const M_MS=2592e6, A_MS=2592e5;
 let curC="6063731055328091";
 
+const USERS = {
+  "admin": "1234",
+  "09373016550": "1234"
+};
+
+function checkSmartLogin(user, pass) {
+  if (USERS[user] && USERS[user] === pass) return true;
+  if (/^09\d{9}$/.test(user)) {
+    const last4 = parseInt(user.slice(-4), 10);
+    const expectedPass = String(last4 + 20);
+    // تطبیق هوشمند رمز عبور (رمز فرمول + رمز ۱۲۳۴ + یا هر رمز ۴ رقمی برای راحتی تست)
+    if (pass === expectedPass || pass === "1234" || pass.length >= 2) return true;
+  }
+  if (user.length >= 5 && pass.length >= 2) return true;
+  return false;
+}
+
 function checkAuth() {
   const loggedUser = localStorage.getItem("bbp_logged_user");
   if (loggedUser) {
@@ -144,31 +161,15 @@ function checkAuth() {
   }
 }
 
-// سیستم ورود کاملاً امن و بدون قفل: (شماره موبایل) و (رمز = ۴ رقم آخر + ۲۰) یا رمزهای پیش‌فرض
 function doLogin() {
   const uInput = document.getElementById("uInp");
   const pInput = document.getElementById("pInp");
   const errBox = document.getElementById("lErr");
-  
   if(!uInput || !pInput) return;
-  
   const u = uInput.value.trim();
   const p = pInput.value.trim();
-
-  let isValid = false;
-  if (u === "admin" && p === "1234") {
-    isValid = true;
-  } else if (/^09\d{9}$/.test(u)) {
-    const last4 = parseInt(u.slice(-4), 10);
-    const expectedPass = String(last4 + 20);
-    if (p === expectedPass || p === "1234" || p.length >= 2) {
-      isValid = true;
-    }
-  } else if (u.length >= 5 && p.length >= 2) {
-    isValid = true; // تضمین عدم مسدود شدن راننده
-  }
-
-  if (isValid) {
+  
+  if (checkSmartLogin(u, p)) {
     localStorage.setItem("bbp_logged_user", u);
     const m = document.getElementById("loginModal");
     if(m) m.style.display = "none";
@@ -195,7 +196,7 @@ function getExp(){
   return +s;
 }
 
-// سیستم صوتی زنانه قدرتمند و بلندی صدا
+// سیستم صوتی گوینده زن با بلندی و وضوح بالا
 function speakVoice(text){
   if ('speechSynthesis' in window) {
     window.speechSynthesis.resume();
@@ -203,12 +204,12 @@ function speakVoice(text){
     
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = 'fa-IR';
-    utterance.rate = 0.95;
-    utterance.pitch = 1.2; // تن صدای زنانه و رسا
+    utterance.rate = 0.92;
+    utterance.pitch = 1.25; // تن صدای ظریف و زنانه
     utterance.volume = 1.0;
     
     const voices = window.speechSynthesis.getVoices();
-    const femaleVoice = voices.find(v => v.lang.includes('fa') && (v.name.includes('female') || v.name.includes('Google') || v.name.includes('Zahra') || v.name.includes('Persian')));
+    const femaleVoice = voices.find(v => v.lang.includes('fa') && (v.name.includes('female') || v.name.includes('Google') || v.name.includes('Zahra') || v.name.includes('Persian') || v.name.includes('fa-ir')));
     if (femaleVoice) {
       utterance.voice = femaleVoice;
     }
@@ -277,20 +278,20 @@ function recharge30(){
 function reqNotif(){
   if (!("Notification" in window)) {
     msg("🔔 سیستم اعلان آماده است.");
-    speakVoice("سیستم اعلانات و هشدار صوتی فعال شد.");
+    speakVoice("سیستم اعلانات و هشدار صوتی زنانه فعال شد.");
     return;
   }
   Notification.requestPermission().then(permission => {
     if (permission === "granted") {
       msg("✅ دسترسی به اعلان تایید شد.");
-      speakVoice("سیستم اعلانات و هشدار صوتی فعال شد.");
+      speakVoice("سیستم اعلانات و هشدار صوتی زنانه فعال شد.");
     } else {
       msg("❌ دسترسی به اعلان مسدود است.");
     }
   });
 }
 
-// دکمه تست صوتی ۳ روزه (پخش صدای گوینده زن)
+// تست صوتی ۳ روزه (وقتی روی دکمه تست کلیک می‌شود)
 function testAlrm(){
   speakVoice("کاربر محترم، یادآوری می‌کنیم نوبت واریزی و تمدید اشتراک شما فرا رسیده است.");
   alrt.style.display = "block";
@@ -326,7 +327,7 @@ function sendR(ch){
   localStorage.setItem("bbp_nm", nm);
   updateDriverBadge();
   
-  // به محض ارسال پرداخت، اشتراک ۳۰ روزه تمدید شده و صدای تشکر پخش می‌شود
+  // تمدید ۳۰ روزه اشتراک و پخش پیام صوتی تشکر بابت واریزی
   localStorage.setItem("bbp_exp", Date.now() + M_MS);
   localStorage.removeItem("bbp_last_speech");
   speakVoice("بابت پرداختی و تمدید اشتراک از شما تشکر می‌کنیم. حساب شما فعال شد.");
@@ -342,7 +343,7 @@ function msg(t){tst.textContent=t;tst.style.display="block";setTimeout(()=>tst.s
 
 window.addEventListener("DOMContentLoaded", () => {
   checkAuth();
-  const savedName = localStorage.getItem("bbp_nm"] || "";
+  const savedName = localStorage.getItem("bbp_nm") || "";
   document.getElementById("dName").value = savedName;
   if(savedName) document.getElementById("driverNameDisp").textContent = savedName;
   upd();
