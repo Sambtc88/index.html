@@ -194,6 +194,11 @@ function doLogin() {
     if(m) m.style.display = "none";
     errBox.style.display = "none";
     msg("خوش آمدید ✅");
+    
+    // درخواست خودکار دسترسی به نوتیفیکیشن سیستمی اندروید به محض ورود موفق
+    if("Notification" in window && Notification.permission !== "granted") {
+      Notification.requestPermission();
+    }
   } else {
     errBox.style.display = "block";
   }
@@ -211,6 +216,13 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("dName").value = savedName;
   if(savedName) document.getElementById("driverNameDisp").textContent = savedName;
   upd();
+  
+  // درخواست مجوز نوتیفیکیشن به محض بارگذاری اپلیکیشن
+  if("Notification" in window && Notification.permission === "default") {
+    setTimeout(() => {
+      Notification.requestPermission();
+    }, 2000);
+  }
 });
 
 function doLogout() {
@@ -229,41 +241,27 @@ function getExp(){
   return +s;
 }
 
-// سیستم پخش صوتی پالس رسا (Web Audio API پیشرفته با ملودی زنگ هشدار واضح و بلند)
-function speakVoice(text){
+// سیستم صوتی ملودی و پالس‌های رسا که در تمام گوشی‌ها با بلندی صدا پخش می‌شود
+function playSoundAlert() {
   try {
     const ctx = new (window.AudioContext || window.webkitAudioContext)();
-    // پخش ملودی آهنگین و بلند دوگانه
-    const notes = [440, 554, 659, 880, 659, 880];
+    const notes = [523, 659, 784, 1046, 784, 1046];
     notes.forEach((f, i) => {
       const o = ctx.createOscillator(), g = ctx.createGain();
       o.type = 'triangle';
       o.frequency.value = f;
-      g.gain.setValueAtTime(0.4, ctx.currentTime + i * 0.12);
+      g.gain.setValueAtTime(0.35, ctx.currentTime + i * 0.12);
       g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + (i + 1) * 0.12);
       o.connect(g); g.connect(ctx.destination);
       o.start(ctx.currentTime + i * 0.12);
       o.stop(ctx.currentTime + (i + 1) * 0.12);
     });
   } catch(e) {}
-
-  if ('speechSynthesis' in window) {
-    try {
-      window.speechSynthesis.resume();
-      window.speechSynthesis.cancel();
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = 'fa-IR';
-      utterance.rate = 0.9;
-      utterance.pitch = 1.2;
-      utterance.volume = 1.0;
-      window.speechSynthesis.speak(utterance);
-    } catch(e) {}
-  }
 }
 
-// نمایش بنر پاپ‌آپ ۵ ثانیه‌ای و صوتی همراه با نام راننده
+// نمایش بنر پاپ‌آپ ۵ ثانیه‌ای روی صفحه همراه با ملودی صوتی رسا
 function showPopupBanner(title, desc) {
-  speakVoice(desc);
+  playSoundAlert();
   const banner = document.getElementById("popupBanner");
   document.getElementById("popupTitle").textContent = title;
   document.getElementById("popupDesc").textContent = desc;
@@ -384,7 +382,7 @@ function sendR(ch){
   localStorage.setItem("bbp_exp", Date.now() + M_MS);
   localStorage.removeItem("bbp_last_speech");
   
-  // نمایش پاپ‌آپ صوتی تشکر همراه با نام راننده
+  // نمایش پاپ‌آپ صوتی تشکر با نام راننده
   showPopupBanner("✅ تشکر از پرداخت شما", `کاربر عزیز ${nm}، بابت پرداختی و تمدید اشتراک از شما تشکر می‌کنیم. حساب شما فعال شد.`);
   upd();
   
