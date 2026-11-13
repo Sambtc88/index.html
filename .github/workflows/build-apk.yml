@@ -33,13 +33,14 @@ jobs:
           if [ -f sw.js ]; then cp sw.js www/; fi
 
           npm init -y
-          npm install @capacitor/core @capacitor/cli @capacitor/android
+          npm install @capacitor/core@latest @capacitor/cli@latest @capacitor/android@latest
           npx cap init "باربرگ بندر پی" "com.barbarg.bandarpay" --web-dir www
           npx cap add android
 
           cd android
           chmod +x gradlew
-          ./gradlew assembleDebug --no-daemon
+          # پاکسازی کش احتمالی و ساخت با اجازه دانلود یا حالت پایدار
+          ./gradlew clean assembleDebug --no-daemon --refresh-dependencies || ./gradlew assembleDebug --no-daemon
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
