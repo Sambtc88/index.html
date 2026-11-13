@@ -24,11 +24,14 @@ jobs:
           java-version: '21'
           distribution: 'temurin'
 
-      - name: Build Web App and APK
+      - name: Build Web App, Set Icon and Compile APK
         run: |
           mkdir -p www
           cp index.html www/
-          if [ -f logo.png ]; then cp logo.png www/; fi
+          if [ -f logo.png ]; then 
+            cp logo.png www/
+            cp logo.png android_icon.png || true
+          fi
           if [ -f manifest.json ]; then cp manifest.json www/; fi
           if [ -f sw.js ]; then cp sw.js www/; fi
 
@@ -36,6 +39,14 @@ jobs:
           npm install @capacitor/core@latest @capacitor/cli@latest @capacitor/android@latest
           npx cap init "باربرگ بندر پی" "com.barbarg.bandarpay" --web-dir www
           npx cap add android
+
+          # قرار دادن تصویر لوگو به عنوان آیکون اصلی پروژه اندروید
+          if [ -f logo.png ]; then
+            mkdir -p android/app/src/main/res/mipmap-xxxhdpi/
+            cp logo.png android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png
+            cp logo.png android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_round.png
+            cp logo.png android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_foreground.png
+          fi
 
           cd android
           chmod +x gradlew
