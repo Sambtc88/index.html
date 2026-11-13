@@ -13,10 +13,10 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Set up Node.js
+      - name: Set up Node.js 22
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
 
       - name: Set up JDK 21
         uses: actions/setup-java@v4
@@ -39,8 +39,7 @@ jobs:
 
           cd android
           chmod +x gradlew
-          # پاکسازی کش احتمالی و ساخت با اجازه دانلود یا حالت پایدار
-          ./gradlew clean assembleDebug --no-daemon --refresh-dependencies || ./gradlew assembleDebug --no-daemon
+          ./gradlew assembleDebug --no-daemon
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
