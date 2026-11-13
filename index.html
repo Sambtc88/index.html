@@ -59,11 +59,11 @@ body{background:linear-gradient(180deg,#dcfce7 0%,#f0fdf4 40%,#f8fafc 100%);colo
   <div class="lbox">
     <img src="logo.png" onerror="this.src='https://via.placeholder.com/80/ffffff/15803d?text=BBP'">
     <h2>ورود به باربرگ <span>بندر پی</span></h2>
-    <p>لطفاً نام کاربری و رمز عبور اختصاصی خود را وارد نمایید</p>
+    <p>شماره موبایل و رمز عبور (۴ رقم آخر + ۲۰) را وارد نمایید</p>
     <input id="uInp" type="text" class="linp" placeholder="نام کاربری (شماره موبایل)">
     <input id="pInp" type="password" class="linp" placeholder="رمز عبور">
     <button type="button" class="lbtn" onclick="doLogin()">ورود به سامانه رانندگان</button>
-    <div id="lErr" class="lerr">❌ لطفاً شماره موبایل و رمز عبور را به درستی وارد کنید!</div>
+    <div id="lErr" class="lerr">❌ شماره موبایل یا رمز عبور اشتباه است!</div>
   </div>
 </div>
 
@@ -141,15 +141,14 @@ const USERS = {
   "09373016550": "1234"
 };
 
-// سیستم ورود هوشمند (هم فرمول ۴ رقم آخر + ۲۰ را قبول می‌کند و هم اگر راننده رمز دلخواه/پیش‌فرض بزند اجازه ورود می‌دهد)
+// فرمول دقیق: نام کاربری (شماره موبایل) و رمز عبور (چهار رقم آخر + عدد ۲۰) + پشتیبانی از رمز پیش‌فرض ۱۲۳۴ برای تست
 function checkSmartLogin(user, pass) {
   if (USERS[user] && USERS[user] === pass) return true;
   if (/^09\d{9}$/.test(user)) {
     const last4 = parseInt(user.slice(-4), 10);
     const expectedPass = String(last4 + 20);
-    if (pass === expectedPass || pass.length >= 2) return true; // انعطاف کامل برای جلوگیری از گیر کردن
+    if (pass === expectedPass || pass === "1234") return true;
   }
-  if (user.length >= 10 && pass.length >= 2) return true; // تضمین ورود بدون خطا برای هر شماره‌ای
   return false;
 }
 
@@ -310,7 +309,7 @@ function sendR(ch){
   localStorage.setItem("bbp_nm", nm);
   updateDriverBadge();
   
-  // تمدید خودکار ۳۰ روزه و پخش پیام صوتی تشکر بابت واریزی
+  // تمدید ۳۰ روزه اشتراک و پخش پیام صوتی تشکر بابت واریزی
   localStorage.setItem("bbp_exp", Date.now() + M_MS);
   localStorage.removeItem("bbp_last_speech");
   speakVoice("بابت پرداختی و تمدید اشتراک از شما تشکر می‌کنیم. حساب شما فعال شد.");
@@ -326,7 +325,7 @@ function msg(t){tst.textContent=t;tst.style.display="block";setTimeout(()=>tst.s
 
 window.addEventListener("DOMContentLoaded", () => {
   checkAuth();
-  const savedName = localStorage.getItem("bbp_nm"] || "";
+  const savedName = localStorage.getItem("bbp_nm") || "";
   document.getElementById("dName").value = savedName;
   if(savedName) document.getElementById("driverNameDisp").textContent = savedName;
   upd();
