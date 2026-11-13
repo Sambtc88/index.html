@@ -40,8 +40,8 @@ body{background:linear-gradient(180deg,#dcfce7 0%,#f0fdf4 40%,#f8fafc 100%);colo
 .bwa{background:#16a34a;color:#fff}.bsms{background:#0f172a;color:#fff}.bpay{background:#eab308;color:#0f172a}
 .tst{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#15803d;color:#fff;padding:10px 18px;border-radius:99px;font-size:.82rem;font-weight:700;display:none;z-index:99999;white-space:nowrap;box-shadow:0 4px 12px rgba(0,0,0,.2)}
 
-/* استایل صفحه ورود (لاگین) */
-#loginModal{position:fixed;inset:0;background:linear-gradient(160deg,#14532d 0%,#15803d 50%,#0f172a 100%);display:flex;align-items:center;justify-content:center;z-index:9999;padding:16px}
+/* استایل صفحه ورود (لاگین) اصلاح‌شده */
+#loginModal{position:fixed;inset:0;background:linear-gradient(160deg,#14532d 0%,#15803d 50%,#0f172a 100%);display:flex;align-items:center;justify-content:center;z-index:99999;padding:16px}
 .lbox{background:#fff;width:100%;max-width:380px;border-radius:24px;padding:24px 20px;text-align:center;box-shadow:0 20px 40px rgba(0,0,0,.3);border:2px solid #bbf7d0}
 .lbox img{width:68px;height:68px;border-radius:16px;border:2px solid #15803d;margin-bottom:10px;object-fit:contain}
 .lbox h2{font-size:1.15rem;font-weight:900;color:#0f172a;margin-bottom:4px}
@@ -55,7 +55,7 @@ body{background:linear-gradient(180deg,#dcfce7 0%,#f0fdf4 40%,#f8fafc 100%);colo
 </head>
 <body>
 
-<!-- صفحه ورود با نام کاربری و رمز عبور -->
+<!-- صفحه ورود با نام کاربری و رمز عبور (اصلاح شده) -->
 <div id="loginModal">
   <div class="lbox">
     <img src="logo.png" onerror="this.src='https://via.placeholder.com/80/ffffff/15803d?text=BBP'">
@@ -63,7 +63,7 @@ body{background:linear-gradient(180deg,#dcfce7 0%,#f0fdf4 40%,#f8fafc 100%);colo
     <p>لطفاً نام کاربری و رمز عبور اختصاصی خود را وارد نمایید</p>
     <input id="uInp" type="text" class="linp" placeholder="نام کاربری (شماره موبایل)">
     <input id="pInp" type="password" class="linp" placeholder="رمز عبور">
-    <button class="lbtn" onclick="doLogin()">ورود به سامانه رانندگان</button>
+    <button type="button" class="lbtn" onclick="doLogin()">ورود به سامانه رانندگان</button>
     <div id="lErr" class="lerr">❌ نام کاربری یا رمز عبور اشتباه است!</div>
   </div>
 </div>
@@ -158,21 +158,29 @@ function checkSmartLogin(user, pass) {
 function checkAuth() {
   const loggedUser = localStorage.getItem("bbp_logged_user");
   if (loggedUser) {
-    document.getElementById("loginModal").style.display = "none";
+    const m = document.getElementById("loginModal");
+    if(m) m.style.display = "none";
   }
 }
 
 function doLogin() {
-  const u = document.getElementById("uInp").value.trim();
-  const p = document.getElementById("pInp").value.trim();
-  const err = document.getElementById("lErr");
+  const uInput = document.getElementById("uInp");
+  const pInput = document.getElementById("pInp");
+  const errBox = document.getElementById("lErr");
+  
+  if(!uInput || !pInput) return;
+  
+  const u = uInput.value.trim();
+  const p = pInput.value.trim();
+
   if (checkSmartLogin(u, p)) {
     localStorage.setItem("bbp_logged_user", u);
-    document.getElementById("loginModal").style.display = "none";
-    err.style.display = "none";
+    const m = document.getElementById("loginModal");
+    if(m) m.style.display = "none";
+    errBox.style.display = "none";
     msg("خوش آمدید ✅");
   } else {
-    err.style.display = "block";
+    errBox.style.display = "block";
   }
 }
 
@@ -260,7 +268,7 @@ function reqNotif(){
       }
     });
   } else {
-    مرورگر شما از اعلان پشتیبانی نمی‌کند
+    msg("مرورگر شما از اعلان پشتیبانی نمی‌کند");
   }
 }
 
@@ -309,12 +317,15 @@ function sendR(ch){
 
 function msg(t){tst.textContent=t;tst.style.display="block";setTimeout(()=>tst.style.display="none",3500)}
 
-checkAuth();
-const savedName = localStorage.getItem("bbp_nm") || "";
-document.getElementById("dName").value = savedName;
-if(savedName) document.getElementById("driverNameDisp").textContent = savedName;
+// بررسی لاگین اولیه در زمان بارگذاری
+window.addEventListener("DOMContentLoaded", () => {
+  checkAuth();
+  const savedName = localStorage.getItem("bbp_nm") || "";
+  document.getElementById("dName").value = savedName;
+  if(savedName) document.getElementById("driverNameDisp").textContent = savedName;
+  upd();
+});
 
-upd();
 setInterval(upd, 30e3);
 
 let dp;window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();dp=e;instBtn.style.display="block";instBtn.onclick=()=>{dp.prompt();instBtn.style.display="none"}});
