@@ -1,324 +1,55 @@
-<!DOCTYPE html>
-<html lang="fa" dir="rtl">
-<head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>باربرگ بندر پی | Barbarg Bandar Pay</title>
-<meta name="theme-color" content="#15803d"><link rel="manifest" href="manifest.json"><link rel="apple-touch-icon" href="logo.png">
-<link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet">
-<style>
-*{box-sizing:border-box;margin:0;padding:0;font-family:'Vazirmatn',sans-serif}
-body{background:linear-gradient(180deg,#dcfce7 0%,#f0fdf4 40%,#f8fafc 100%);color:#0f172a;min-height:100vh;padding:16px 16px 40px}
-.box{max-width:460px;margin:0 auto}
-.hdr{display:flex;align-items:center;justify-content:space-between;background:#fff;padding:12px 16px;border-radius:20px;border:2px solid #bbf7d0;margin-bottom:14px;box-shadow:0 6px 18px rgba(21,128,61,.08)}
-.brand{display:flex;align-items:center;gap:10px}
-.logo{width:56px;height:56px;border-radius:14px;object-fit:contain;border:2px solid #15803d}
-.title h1{font-size:1.05rem;font-weight:900}.title h1 span{color:#15803d}.title p{font-size:.74rem;color:#64748b}
-.inst{background:#15803d;color:#fff;border:0;padding:8px 12px;border-radius:10px;font-size:.76rem;font-weight:800;display:none;cursor:pointer}
-.logout-btn{background:#fef2f2;color:#dc2626;border:1px solid #fecaca;padding:6px 10px;border-radius:10px;font-size:.72rem;font-weight:800;cursor:pointer}
-.alrt{display:none;background:#fef2f2;border:2px solid #dc2626;border-radius:16px;padding:12px;margin-bottom:14px;color:#7f1d1d;font-size:.82rem;line-height:1.6}
-.alrt b{color:#dc2626;display:block;font-size:.92rem;margin-bottom:4px}
-.card{background:#fff;border-radius:20px;padding:18px;margin-bottom:14px;border:1px solid #dcfce7;box-shadow:0 8px 20px rgba(0,0,0,.04)}
-.stitle{font-size:.92rem;font-weight:800;color:#15803d;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center}
-.driver-badge{background:#f0fdf4;border:1.5px solid #bbf7d0;padding:12px 16px;border-radius:16px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;font-size:.88rem;font-weight:800;color:#15803d;box-shadow:0 4px 12px rgba(21,128,61,.05)}
-.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;text-align:center;margin-bottom:12px}
-.tbox{background:#f0fdf4;padding:12px 6px;border-radius:14px;border:1px solid #bbf7d0}
-.tnum{font-size:1.6rem;font-weight:900;color:#15803d;display:block}.tlbl{font-size:.74rem;color:#64748b}
-.pbg{height:10px;background:#e2e8f0;border-radius:99px;overflow:hidden;margin-bottom:10px}
-.pfill{height:100%;background:linear-gradient(90deg,#15803d,#22c55e);width:100%}
-.acts{display:flex;gap:6px;margin-top:8px}
-.bsm{flex:1;background:#f8fafc;border:1px solid #cbd5e1;padding:8px 4px;border-radius:10px;font-size:.68rem;font-weight:800;cursor:pointer;white-space:nowrap;text-align:center;overflow:hidden;text-overflow:ellipsis}
-.bsm.locked{opacity:.65;background:#f1f5f9;color:#64748b}
-.bcard{border-radius:16px;padding:16px;margin-bottom:12px;color:#fff;cursor:pointer;border:3px solid transparent}
-.bcard.sel{border-color:#eab308;box-shadow:0 6px 16px rgba(21,128,61,.25)}
-.mehr{background:linear-gradient(135deg,#14532d,#15803d,#22c55e)}
-.blu{background:linear-gradient(135deg,#1e3a8a,#2563eb,#3b82f6)}
-.cnum{font-size:1.22rem;font-weight:900;letter-spacing:2px;text-align:center;direction:ltr;margin:10px 0}
-.bfoot{display:flex;justify-content:space-between;font-size:.74rem;opacity:.95}
-.inp{width:100%;background:#f8fafc;border:1.5px solid #cbd5e1;border-radius:12px;padding:11px;font-size:.88rem;margin:6px 0 12px}
-.lbl{font-size:.8rem;font-weight:700;display:block}
-.btn{width:100%;border:0;padding:13px;border-radius:12px;font-size:.9rem;font-weight:800;cursor:pointer;margin-top:8px}
-.bwa{background:#16a34a;color:#fff}.bsms{background:#0f172a;color:#fff}.bpay{background:#eab308;color:#0f172a}
-.tst{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#15803d;color:#fff;padding:10px 18px;border-radius:99px;font-size:.82rem;font-weight:700;display:none;z-index:99999;white-space:nowrap;box-shadow:0 4px 12px rgba(0,0,0,.2)}
+name: Build Barbarg Bandar Pay APK
 
-/* استایل صفحه ورود (لاگین) */
-#loginModal{position:fixed;inset:0;background:linear-gradient(160deg,#14532d 0%,#15803d 50%,#0f172a 100%);display:flex;align-items:center;justify-content:center;z-index:9999;padding:16px}
-.lbox{background:#fff;width:100%;max-width:380px;border-radius:24px;padding:24px 20px;text-align:center;box-shadow:0 20px 40px rgba(0,0,0,.3);border:2px solid #bbf7d0}
-.lbox img{width:68px;height:68px;border-radius:16px;border:2px solid #15803d;margin-bottom:10px;object-fit:contain}
-.lbox h2{font-size:1.15rem;font-weight:900;color:#0f172a;margin-bottom:4px}
-.lbox h2 span{color:#15803d}
-.lbox p{font-size:.78rem;color:#64748b;margin-bottom:18px}
-.linp{width:100%;background:#f8fafc;border:1.5px solid #cbd5e1;border-radius:12px;padding:12px;font-size:.92rem;margin-bottom:12px;text-align:center;direction:ltr}
-.linp:focus{outline:none;border-color:#15803d;background:#f0fdf4}
-.lbtn{width:100%;background:linear-gradient(90deg,#15803d,#16a34a);color:#fff;border:0;padding:13px;border-radius:12px;font-size:.95rem;font-weight:800;cursor:pointer;box-shadow:0 6px 16px rgba(21,128,61,.25)}
-.lerr{color:#dc2626;font-size:.8rem;font-weight:700;margin-top:10px;display:none}
-</style>
-</head>
-<body>
+on:
+  push:
+    branches: [ "main", "master" ]
+  workflow_dispatch:
 
-<!-- صفحه ورود با نام کاربری و رمز عبور -->
-<div id="loginModal">
-  <div class="lbox">
-    <img src="logo.png" onerror="this.src='https://via.placeholder.com/80/ffffff/15803d?text=BBP'">
-    <h2>ورود به باربرگ <span>بندر پی</span></h2>
-    <p>لطفاً نام کاربری و رمز عبور اختصاصی خود را وارد نمایید</p>
-    <input id="uInp" type="text" class="linp" placeholder="نام کاربری (شماره موبایل)">
-    <input id="pInp" type="password" class="linp" placeholder="رمز عبور">
-    <button class="lbtn" onclick="doLogin()">ورود به سامانه رانندگان</button>
-    <div id="lErr" class="lerr">❌ نام کاربری یا رمز عبور اشتباه است!</div>
-  </div>
-</div>
+jobs:
+  build:
+    runs-on: ubuntu-latest
 
-<div class="box">
-  <div class="hdr">
-    <div class="brand">
-      <img src="logo.png" class="logo" onerror="this.src='https://via.placeholder.com/80/ffffff/15803d?text=BBP'">
-      <div class="title"><h1>باربرگ <span>بندر پی</span></h1><p>Barbarg Bandar Pay | سامانه رانندگان</p></div>
-    </div>
-    <div style="display:flex;gap:6px;align-items:center">
-      <button id="instBtn" class="inst">نصب برنامه</button>
-      <button class="logout-btn" onclick="doLogout()">خروج</button>
-    </div>
-  </div>
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
 
-  <!-- کارت نمایش نام راننده به صورت برجسته در بالای صفحه -->
-  <div id="driverBadge" class="driver-badge">
-    <span>👤 راننده محترم: <b id="driverNameDisp" style="color:#15803d;">ثبت نشده</b></span>
-    <span style="font-size:0.72rem;background:#dcfce7;padding:4px 8px;border-radius:8px;color:#15803d;">فعال ✓</span>
-  </div>
+      - name: Set up Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
 
-  <div id="alrt" class="alrt"><b>⚠️ هشدار پایان اعتبار حساب کاربری!</b>راننده گرامی، کمتر از ۳ روز به پایان اشتراک ماهانه شما باقی مانده است. لطفاً جهت تمدید و ارسال رسید اقدام نمایید.</div>
-  
-  <div class="card">
-    <div class="stitle"><span>⏳ روزشمار اعتبار ماهانه</span><span id="bdg">حساب فعال ✓</span></div>
-    <div class="grid">
-      <div class="tbox"><span id="dL" class="tnum">30</span><span class="tlbl">روز مانده</span></div>
-      <div class="tbox"><span id="hL" class="tnum">00</span><span class="tlbl">ساعت</span></div>
-      <div class="tbox"><span id="mL" class="tnum">00</span><span class="tlbl">دقیقه</span></div>
-    </div>
-    <div class="pbg"><div id="pBar" class="pfill"></div></div>
-    <p id="expTxt" style="font-size:.76rem;color:#64748b;text-align:center;margin-bottom:8px;font-weight:600"></p>
-    <div class="acts">
-      <button class="bsm" onclick="reqNotif()">🔔 اعلان</button>
-      <button class="bsm" onclick="testAlrm()">🚨 تست ۳ روزه</button>
-      <button id="rchgBtn" class="bsm" onclick="recharge30()">🔄 شارژ ۳۰ روزه</button>
-    </div>
-  </div>
-  <div class="card">
-    <div class="stitle"><span>💳 انتخاب کارت و پرداخت آنلاین</span><span style="font-size:.72rem;color:#64748b">ضربه برای کپی</span></div>
-    <div id="c1" class="bcard mehr sel" onclick="selC('6063731055328091','بانک مهر','c1',0)">
-      <div class="bfoot"><b>بانک قرض‌الحسنه مهر ایران</b><span>کپی خودکار</span></div>
-      <div class="cnum">6063 7310 5532 8091</div>
-      <div class="bfoot"><span>باربرگ بندر پی</span><span>انتخاب شده ✓</span></div>
-    </div>
-    <div id="c2" class="bcard blu" onclick="selC('6219861986589132','بلو بانک سامان','c2',1)">
-      <div class="bfoot"><b>بلو کارت (بانک سامان)</b><span>کپی خودکار</span></div>
-      <div class="cnum">6219 8619 8658 9132</div>
-      <div class="bfoot"><span>باربرگ بندر پی</span><span>انتخاب کارت</span></div>
-    </div>
-    <button class="btn bpay" onclick="copyNow()">⚡ کپی شماره کارت انتخاب‌شده جهت واریز</button>
-  </div>
-  <div class="card">
-    <div class="stitle"><span>📝 ثبت مشخصات و ارسال رسید پرداخت</span></div>
-    <label class="lbl">نام و نام خانوادگی راننده *</label><input id="dName" class="inp" placeholder="مثال: علی محمدی" oninput="updateDriverBadge()">
-    <label class="lbl">مبلغ پرداختی (تومان) *</label><input id="pAmt" class="inp" placeholder="مثال: 500,000">
-    <label class="lbl">کارت مقصد واریز شده</label>
-    <select id="bSel" class="inp">
-      <option value="بانک مهر (6063731055328091)">بانک مهر (6063731055328091)</option>
-      <option value="بلو بانک سامان (6219861986589132)">بلو بانک سامان (6219861986589132)</option>
-    </select>
-    <label class="lbl">شماره پیگیری رسید / ۴ رقم آخر کارت *</label><input id="tCode" class="inp" placeholder="شماره مرجع بانکی">
-    <button class="btn bwa" onclick="sendR('wa')">🟢 ارسال خودکار رسید در واتساپ (09373016550)</button>
-    <button class="btn bsms" onclick="sendR('sms')">💬 ارسال خودکار رسید با پیامک (09373016550)</button>
-  </div>
-  <p style="text-align:center;font-size:.8rem;color:#64748b">پشتیبانی باربرگ بندر پی: <a href="tel:09373016550" style="color:#15803d;font-weight:800;text-decoration:none">09373016550</a></p>
-</div>
-<div id="tst" class="tst"></div>
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
 
-<script>
-const M_MS=2592e6, A_MS=2592e5;
-let curC="6063731055328091";
+      - name: Build Web App and APK
+        run: |
+          mkdir -p www
+          cp index.html www/
+          if [ -f logo.png ]; then cp logo.png www/; fi
+          if [ -f manifest.json ]; then cp manifest.json www/; fi
+          if [ -f sw.js ]; then cp sw.js www/; fi
 
-const USERS = {
-  "admin": "1234",
-  "09373016550": "1234",
-  "driver1": "1111",
-  "driver2": "2222"
-};
+          npm init -y
+          npm install @capacitor/core@latest @capacitor/cli@latest @capacitor/android@latest
+          npx cap init "باربرگ بندر پی" "com.barbarg.bandarpay" --web-dir www
+          npx cap add android
 
-function checkSmartLogin(user, pass) {
-  if (USERS[user] && USERS[user] === pass) return true;
-  if (/^09\d{9}$/.test(user)) {
-    const last4 = parseInt(user.slice(-4), 10);
-    const expectedPass = String(last4 + 50);
-    if (pass === expectedPass) return true;
-  }
-  return false;
-}
+          if [ -f logo.png ]; then
+            mkdir -p android/app/src/main/res/mipmap-xxxhdpi/
+            cp logo.png android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png
+            cp logo.png android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_round.png
+            cp logo.png android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_foreground.png
+          fi
 
-function checkAuth() {
-  const loggedUser = localStorage.getItem("bbp_logged_user");
-  if (loggedUser) {
-    document.getElementById("loginModal").style.display = "none";
-  }
-}
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleDebug --no-daemon
 
-function doLogin() {
-  const u = document.getElementById("uInp").value.trim();
-  const p = document.getElementById("pInp").value.trim();
-  const err = document.getElementById("lErr");
-  if (checkSmartLogin(u, p)) {
-    localStorage.setItem("bbp_logged_user", u);
-    document.getElementById("loginModal").style.display = "none";
-    err.style.display = "none";
-    msg("خوش آمدید ✅");
-  } else {
-    err.style.display = "block";
-  }
-}
-
-function doLogout() {
-  if (confirm("آیا می‌خواهید از حساب کاربری خود خارج شوید؟")) {
-    localStorage.removeItem("bbp_logged_user");
-    location.reload();
-  }
-}
-
-function getExp(){
-  let s = localStorage.getItem("bbp_exp");
-  if(!s){
-    s = Date.now() + M_MS;
-    localStorage.setItem("bbp_exp", s);
-  }
-  return +s;
-}
-
-function beep(){try{const c=new(window.AudioContext||window.webkitAudioContext)();[523,659,784,1046].forEach((f,i)=>{const o=c.createOscillator(),g=c.createGain();o.frequency.value=f;g.gain.setValueAtTime(.2,c.currentTime+i*.18);g.gain.exponentialRampToValueAtTime(.001,c.currentTime+(i+1)*.18);o.connect(g);g.connect(c.destination);o.start(c.currentTime+i*.18);o.stop(c.currentTime+(i+1)*.18)})}catch(e){}}
-
-function notif(){
-  if("Notification" in window){
-    if(Notification.permission === "granted"){
-      new Notification("⚠️ یادآوری باربرگ بندر پی",{body:"کمتر از ۳ روز به پایان اعتبار مانده است. لطفاً جهت تمدید اقدام کنید.",icon:"logo.png"});
-    } else if(Notification.permission !== "denied"){
-      Notification.requestPermission().then(p => {
-        if(p === "granted"){
-          new Notification("🔔 باربرگ بندر پی",{body:"اعلان‌ها با موفقیت فعال شدند.",icon:"logo.png"});
-        }
-      });
-    }
-  }
-}
-
-function upd(){
-  const exp = getExp(), df = Math.max(0, exp - Date.now());
-  dL.textContent = Math.floor(df/864e5);
-  hL.textContent = String(Math.floor(df/36e5%24)).padStart(2,"0");
-  mL.textContent = String(Math.floor(df/6e4%60)).padStart(2,"0");
-  pBar.style.width = Math.min(100, df/M_MS*100) + "%";
-  expTxt.textContent = "سررسید ماهانه: " + new Intl.DateTimeFormat("fa-IR").format(new Date(exp));
-  
-  const rBtn = document.getElementById("rchgBtn");
-  if(df <= A_MS){
-    alrt.style.display = "block";
-    pBar.style.background = "#dc2626";
-    bdg.textContent = "نیاز به تمدید فوری!";
-    bdg.style.color = "#dc2626";
-    rBtn.classList.remove("locked");
-    const td = new Date().toDateString();
-    if(localStorage.getItem("bbp_al") !== td){
-      beep(); notif(); localStorage.setItem("bbp_al", td);
-    }
-  } else {
-    alrt.style.display = "none";
-    pBar.style.background = "linear-gradient(90deg,#15803d,#22c55e)";
-    bdg.textContent = "حساب فعال ✓";
-    bdg.style.color = "#15803d";
-    rBtn.classList.add("locked");
-  }
-}
-
-function recharge30(){
-  const df = Math.max(0, getExp() - Date.now());
-  if (df > A_MS) {
-    return msg("اشتراک شما فعال است! امکان شارژ مجدد نیست.");
-  }
-  if (confirm("آیا واریز را انجام داده‌اید و می‌خواهید اشتراک ۳۰ روزه جدید فعال شود؟")) {
-    localStorage.setItem("bbp_exp", Date.now() + M_MS);
-    localStorage.removeItem("bbp_al");
-    upd();
-    msg("✅ اشتراک شما برای ۳۰ روز آینده شارژ شد");
-  }
-}
-
-function reqNotif(){
-  if("Notification" in window){
-    Notification.requestPermission().then(p => {
-      if(p === "granted"){
-        msg("اعلان‌ها فعال شدند ✅");
-        new Notification("باربرگ بندر پی", {body: "سیستم هشدار و اعلانات فعال است.", icon: "logo.png"});
-      } else {
-        msg("❌ اجازه دسترسی به اعلان داده نشد");
-      }
-    });
-  } else {
-    msg("مرورگر شما از اعلان پشتیبانی نمی‌کند");
-  }
-}
-
-function testAlrm(){
-  beep(); notif();
-  alrt.style.display = "block";
-  pBar.style.background = "#dc2626";
-  bdg.textContent = "نیاز به تمدید فوری! (تست)";
-  bdg.style.color = "#dc2626";
-  msg("🚨 پیش‌نمایش آلارم ۳ روزه (۵ ثانیه)");
-  setTimeout(() => { upd(); }, 5000);
-}
-
-function selC(n,t,id,ix){curC=n;c1.classList.remove("sel");c2.classList.remove("sel");document.getElementById(id).classList.add("sel");bSel.selectedIndex=ix;navigator.clipboard.writeText(n);msg("کارت "+t+" کپی شد 📋")}
-function copyNow(){navigator.clipboard.writeText(curC);msg("شماره کارت کپی شد! پس از واریز فرم زیر را پر کنید.")}
-
-function updateDriverBadge() {
-  const val = document.getElementById("dName").value.trim();
-  const disp = document.getElementById("driverNameDisp");
-  if(val) {
-    disp.textContent = val;
-    localStorage.setItem("bbp_nm", val);
-  } else {
-    disp.textContent = "ثبت نشده";
-  }
-}
-
-function sendR(ch){
-  const nm=dName.value.trim(), am=pAmt.value.trim(), bk=bSel.value, tr=tCode.value.trim();
-  if(!nm||!am||!tr) return msg("⚠️ نام، مبلغ و کد پیگیری را کامل وارد کنید");
-  localStorage.setItem("bbp_nm", nm);
-  updateDriverBadge();
-  
-  const df = Math.max(0, getExp() - Date.now());
-  if (df <= A_MS) {
-    localStorage.setItem("bbp_exp", Date.now() + M_MS);
-    localStorage.removeItem("bbp_al");
-    upd();
-  }
-  
-  const dt = new Intl.DateTimeFormat("fa-IR",{dateStyle:"short",timeStyle:"short"}).format(new Date());
-  const tx = `✅ *رسید پرداخت باربرگ بندر پی*\n👤 راننده: ${nm}\n💰 مبلغ: ${am} تومان\n🏦 مقصد: ${bk}\n🔢 پیگیری: ${tr}\n📅 تاریخ: ${dt}`;
-  if(ch==="wa") window.open("https://wa.me/989373016550?text="+encodeURIComponent(tx),"_blank");
-  else location.href="sms:09373016550?body="+encodeURIComponent(tx);
-}
-
-function msg(t){tst.textContent=t;tst.style.display="block";setTimeout(()=>tst.style.display="none",3500)}
-
-checkAuth();
-const savedName = localStorage.getItem("bbp_nm") || "";
-document.getElementById("dName").value = savedName;
-if(savedName) document.getElementById("driverNameDisp").textContent = savedName;
-
-upd();
-setInterval(upd, 30e3);
-
-let dp;window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();dp=e;instBtn.style.display="block";instBtn.onclick=()=>{dp.prompt();instBtn.style.display="none"}});
-if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js").catch(()=>{});
-</script>
-</body>
-</html>
+      - name: Upload APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Barbarg-Bandar-Pay-APK
+          path: android/app/build/outputs/apk/debug/app-debug.apk
