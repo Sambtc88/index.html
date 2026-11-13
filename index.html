@@ -167,7 +167,6 @@ const USERS = {
   "09373016550": "1670"
 };
 
-// چک کردن دقیق فرمول ورود: شماره موبایل + رمز (۴ رقم آخر + عدد ۲۰)
 function checkSmartLogin(user, pass) {
   if (USERS[user] && USERS[user] === pass) return true;
   if (/^09\d{9}$/.test(user)) {
@@ -201,7 +200,6 @@ function doLogin() {
     errBox.style.display = "none";
     msg("خوش آمدید ✅");
     
-    // درخواست مجوز سیستمی اعلان به محض ورود موفق
     if("Notification" in window && Notification.permission !== "granted") {
       Notification.requestPermission();
     }
@@ -223,7 +221,6 @@ document.addEventListener("DOMContentLoaded", () => {
   if(savedName) document.getElementById("driverNameDisp").textContent = savedName;
   upd();
   
-  // درخواست خودکار مجوز نوتیفیکیشن هنگام نصب و باز شدن اپلیکیشن
   if("Notification" in window && Notification.permission === "default") {
     setTimeout(() => {
       Notification.requestPermission();
@@ -247,7 +244,7 @@ function getExp(){
   return +s;
 }
 
-// سیستم صوتی رسا و دلنشین (Web Audio API پیشرفته همراه با سنتز صوتی داخلی)
+// سیستم ملودی هشدار رسا (Web Audio API)
 function playSoundAlert() {
   try {
     const ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -265,7 +262,7 @@ function playSoundAlert() {
   } catch(e) {}
 }
 
-// نمایش بنر پاپ‌آپ ۵ ثانیه‌ای روی صفحه همراه با محو شدن خودکار
+// نمایش بنر پاپ‌آپ ۵ ثانیه‌ای روی صفحه با محو شدن خودکار
 function showPopupBanner(title, desc, isSuccess = false) {
   playSoundAlert();
   const banner = document.getElementById("popupBanner");
@@ -280,7 +277,7 @@ function showPopupBanner(title, desc, isSuccess = false) {
   
   setTimeout(() => {
     banner.classList.remove("show");
-  }, 5000); // محو شدن خودکار بعد از ۵ ثانیه
+  }, 5000);
 }
 
 function upd(){
@@ -393,7 +390,7 @@ function sendR(ch){
   localStorage.setItem("bbp_exp", Date.now() + M_MS);
   localStorage.removeItem("bbp_last_speech");
   
-  // نمایش پاپ‌آپ سبز رنگ تشکر با نام راننده که بعد از ۵ ثانیه محو می‌شود
+  // نمایش پاپ‌آپ تشکر سبز رنگ با محو شدن خودکار بعد از ۵ ثانیه
   showPopupBanner("✅ تشکر از پرداخت شما", `کاربر عزیز ${nm}، بابت پرداختی و تمدید اشتراک از شما تشکر می‌کنیم. حساب شما فعال شد.`, true);
   upd();
   
