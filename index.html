@@ -141,7 +141,7 @@ const USERS = {
   "09373016550": "1234"
 };
 
-// فرمول دقیق: نام کاربری (شماره موبایل) و رمز عبور (چهار رقم آخر + عدد ۲۰) + پشتیبانی از رمز پیش‌فرض ۱۲۳۴ برای تست
+// سیستم ورود: شماره موبایل + رمز (۴ رقم آخر + ۲۰)
 function checkSmartLogin(user, pass) {
   if (USERS[user] && USERS[user] === pass) return true;
   if (/^09\d{9}$/.test(user)) {
@@ -194,16 +194,29 @@ function getExp(){
   return +s;
 }
 
-// سیستم صوتی گوینده
+// سیستم صوتی هوشمند (گوینده زن / فارسی با پشتیبانی از سیستم‌عامل اندروید)
 function speakVoice(text){
   if ('speechSynthesis' in window) {
     window.speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = 'fa-IR';
     utterance.rate = 0.95;
-    utterance.pitch = 1.0;
+    utterance.pitch = 1.1; // تن صدای زیرتر برای گوینده زن
+    
+    // انتخاب صدای زنانه در صورت وجود در موتور صوتی گوشی
+    const voices = window.speechSynthesis.getVoices();
+    const faVoice = voices.find(v => v.lang.includes('fa') && (v.name.includes('female') || v.name.includes('Google') || v.name.includes('Zahra') || v.name.includes('Persian')));
+    if (faVoice) {
+      utterance.voice = faVoice;
+    }
+    
     window.speechSynthesis.speak(utterance);
   }
+}
+
+// بارگذاری اولیه صداها برای موتور مرورگر
+if ('speechSynthesis' in window) {
+  window.speechSynthesis.onvoiceschanged = () => { window.speechSynthesis.getVoices(); };
 }
 
 function upd(){
@@ -262,6 +275,7 @@ function recharge30(){
 function reqNotif(){
   if (!("Notification" in window)) {
     msg("🔔 سیستم اعلان آماده است.");
+    speakVoice("سیستم اعلانات و هشدار صوتی فعال شد.");
     return;
   }
   Notification.requestPermission().then(permission => {
@@ -274,13 +288,14 @@ function reqNotif(){
   });
 }
 
+// دکمه تست صوتی ۳ روزه
 function testAlrm(){
   speakVoice("کاربر محترم، یادآوری می‌کنیم نوبت واریزی و تمدید اشتراک شما فرا رسیده است.");
   alrt.style.display = "block";
   pBar.style.background = "#dc2626";
   bdg.textContent = "نیاز به تمدید فوری! (تست)";
   bdg.style.color = "#dc2626";
-  msg("🚨 تست صوتی گوینده ۳ روزه اجرا شد");
+  msg("🚨 تست صوتی گوینده زن اجرا شد");
   if("Notification" in window && Notification.permission === "granted"){
     try {
       new Notification("تست آلارم باربرگ", {body: "یادآوری: نوبت واریزی شما رسیده است.", icon: "logo.png"});
@@ -309,7 +324,7 @@ function sendR(ch){
   localStorage.setItem("bbp_nm", nm);
   updateDriverBadge();
   
-  // تمدید ۳۰ روزه اشتراک و پخش پیام صوتی تشکر بابت واریزی
+  // به محض ارسال پرداخت، اشتراک ۳۰ روزه تمدید شده و صدای تشکر پخش می‌شود
   localStorage.setItem("bbp_exp", Date.now() + M_MS);
   localStorage.removeItem("bbp_last_speech");
   speakVoice("بابت پرداختی و تمدید اشتراک از شما تشکر می‌کنیم. حساب شما فعال شد.");
