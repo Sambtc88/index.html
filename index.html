@@ -125,6 +125,7 @@ body{background:linear-gradient(180deg,#dcfce7 0%,#f0fdf4 40%,#f8fafc 100%);colo
       <option value="بلو بانک سامان (6219861986589132)">بلو بانک سامان (6219861986589132)</option>
     </select>
     <label class="lbl">شماره پیگیری رسید / ۴ رقم آخر کارت *</label><input id="tCode" class="inp" placeholder="شماره مرجع بانکی">
+    <!-- آیکون و دکمه واتساپ با ظاهر دلخواه شما -->
     <button class="btn bwa" onclick="sendR('wa')">🟢 ارسال خودکار رسید در واتساپ (09373016550)</button>
     <button class="btn bsms" onclick="sendR('sms')">💬 ارسال خودکار رسید با پیامک (09373016550)</button>
   </div>
@@ -146,7 +147,6 @@ function checkSmartLogin(user, pass) {
   if (/^09\d{9}$/.test(user)) {
     const last4 = parseInt(user.slice(-4), 10);
     const expectedPass = String(last4 + 20);
-    // تطبیق هوشمند رمز عبور (رمز فرمول + رمز ۱۲۳۴ + یا هر رمز ۴ رقمی برای راحتی تست)
     if (pass === expectedPass || pass === "1234" || pass.length >= 2) return true;
   }
   if (user.length >= 5 && pass.length >= 2) return true;
@@ -196,30 +196,38 @@ function getExp(){
   return +s;
 }
 
-// سیستم صوتی گوینده زن با بلندی و وضوح بالا
-function speakVoice(text){
-  if ('speechSynthesis' in window) {
-    window.speechSynthesis.resume();
-    window.speechSynthesis.cancel();
-    
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = 'fa-IR';
-    utterance.rate = 0.92;
-    utterance.pitch = 1.25; // تن صدای ظریف و زنانه
-    utterance.volume = 1.0;
-    
-    const voices = window.speechSynthesis.getVoices();
-    const femaleVoice = voices.find(v => v.lang.includes('fa') && (v.name.includes('female') || v.name.includes('Google') || v.name.includes('Zahra') || v.name.includes('Persian') || v.name.includes('fa-ir')));
-    if (femaleVoice) {
-      utterance.voice = femaleVoice;
-    }
-    
-    window.speechSynthesis.speak(utterance);
-  }
-}
+// سیستم صوتی ترکیبی (پخش بیپ صوتی بلندی صدا + موتور گفتار زنانه برای تضمین پخش صدا روی گوشی)
+function playBeepAndSpeech(text) {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    [523, 659, 784].forEach((f, i) => {
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.frequency.value = f;
+      g.gain.setValueAtTime(0.2, ctx.currentTime + i * 0.12);
+      g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + (i + 1) * 0.12);
+      o.connect(g); g.connect(ctx.destination);
+      o.start(ctx.currentTime + i * 0.12);
+      o.stop(ctx.currentTime + (i + 1) * 0.12);
+    });
+  } catch(e) {}
 
-if ('speechSynthesis' in window) {
-  window.speechSynthesis.onvoiceschanged = () => { window.speechSynthesis.getVoices(); };
+  if ('speechSynthesis' in window) {
+    setTimeout(() => {
+      window.speechSynthesis.resume();
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = 'fa-IR';
+      utterance.rate = 0.95;
+      utterance.pitch = 1.25; // تن صدای زیر و زنانه
+      utterance.volume = 1.0;
+      
+      const voices = window.speechSynthesis.getVoices();
+      const femaleVoice = voices.find(v => v.lang.includes('fa') && (v.name.includes('female') || v.name.includes('Google') || v.name.includes('Zahra') || v.name.includes('Persian')));
+      if (femaleVoice) utterance.voice = femaleVoice;
+      
+      window.speechSynthesis.speak(utterance);
+    }, 400);
+  }
 }
 
 function upd(){
@@ -250,7 +258,7 @@ function upd(){
     const thirtyMinutes = 30 * 60 * 1000; // هر ۳۰ دقیقه در ۳ روز پایانی
     
     if (now - lastSpoken > thirtyMinutes) {
-      speakVoice("کاربر محترم، یادآوری می‌کنیم نوبت واریزی و تمدید اشتراک شما فرا رسیده است.");
+      playBeepAndSpeech("کاربر محترم، یادآوری می‌کنیم نوبت واریزی و تمدید اشتراک شما فرا رسیده است.");
       if("Notification" in window && Notification.permission === "granted"){
         try {
           new Notification("⚠️ هشدار پایان اعتبار", {body: "کاربر محترم، نوبت واریزی شما رسیده است.", icon: "logo.png"});
@@ -269,7 +277,7 @@ function recharge30(){
   if (confirm("آیا واریز را انجام داده‌اید و می‌خواهید اشتراک ۳۰ روزه جدید فعال شود؟")) {
     localStorage.setItem("bbp_exp", Date.now() + M_MS);
     localStorage.removeItem("bbp_last_speech");
-    speakVoice("بابت پرداختی و تمدید اشتراک از شما تشکر می‌کنیم. حساب شما فعال شد.");
+    playBeepAndSpeech("بابت پرداختی و تمدید اشتراک از شما تشکر می‌کنیم. حساب شما فعال شد.");
     upd();
     msg("✅ اشتراک شما برای ۳۰ روز آینده شارژ شد");
   }
@@ -278,22 +286,22 @@ function recharge30(){
 function reqNotif(){
   if (!("Notification" in window)) {
     msg("🔔 سیستم اعلان آماده است.");
-    speakVoice("سیستم اعلانات و هشدار صوتی زنانه فعال شد.");
+    playBeepAndSpeech("سیستم اعلانات و هشدار صوتی فعال شد.");
     return;
   }
   Notification.requestPermission().then(permission => {
     if (permission === "granted") {
       msg("✅ دسترسی به اعلان تایید شد.");
-      speakVoice("سیستم اعلانات و هشدار صوتی زنانه فعال شد.");
+      playBeepAndSpeech("سیستم اعلانات و هشدار صوتی فعال شد.");
     } else {
       msg("❌ دسترسی به اعلان مسدود است.");
     }
   });
 }
 
-// تست صوتی ۳ روزه (وقتی روی دکمه تست کلیک می‌شود)
+// دکمه تست ۳ روزه با صدای گوینده زن
 function testAlrm(){
-  speakVoice("کاربر محترم، یادآوری می‌کنیم نوبت واریزی و تمدید اشتراک شما فرا رسیده است.");
+  playBeepAndSpeech("کاربر محترم، یادآوری می‌کنیم نوبت واریزی و تمدید اشتراک شما فرا رسیده است.");
   alrt.style.display = "block";
   pBar.style.background = "#dc2626";
   bdg.textContent = "نیاز به تمدید فوری! (تست)";
@@ -327,10 +335,10 @@ function sendR(ch){
   localStorage.setItem("bbp_nm", nm);
   updateDriverBadge();
   
-  // تمدید ۳۰ روزه اشتراک و پخش پیام صوتی تشکر بابت واریزی
+  // تمدید خودکار اشتراک و پخش پیام صوتی تشکر بابت واریز
   localStorage.setItem("bbp_exp", Date.now() + M_MS);
   localStorage.removeItem("bbp_last_speech");
-  speakVoice("بابت پرداختی و تمدید اشتراک از شما تشکر می‌کنیم. حساب شما فعال شد.");
+  playBeepAndSpeech("بابت پرداختی و تمدید اشتراک از شما تشکر می‌کنیم. حساب شما فعال شد.");
   upd();
   
   const dt = new Intl.DateTimeFormat("fa-IR",{dateStyle:"short",timeStyle:"short"}).format(new Date());
