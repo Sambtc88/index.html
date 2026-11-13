@@ -42,9 +42,10 @@ body{background:linear-gradient(180deg,#dcfce7 0%,#f0fdf4 40%,#f8fafc 100%);colo
 .bpay{background:#eab308;color:#0f172a}
 .tst{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#15803d;color:#fff;padding:10px 18px;border-radius:99px;font-size:.82rem;font-weight:700;display:none;z-index:99999;white-space:nowrap;box-shadow:0 4px 12px rgba(0,0,0,.2)}
 
-/* بنر پاپ‌آپ هشدار (۵ ثانیه‌ای روی صفحه) */
-#popupBanner{position:fixed;top:-120px;left:16px;right:16px;background:#dc2626;color:#fff;padding:16px;border-radius:20px;z-index:999999;box-shadow:0 10px 30px rgba(220,38,38,.4);display:flex;align-items:center;gap:12px;transition:top .4s ease;border:2px solid #fef2f2}
+/* بنر پاپ‌آپ هشدار (کاملاً روان با قابلیت محو شدن خودکار) */
+#popupBanner{position:fixed;top:-140px;left:16px;right:16px;background:#dc2626;color:#fff;padding:16px;border-radius:20px;z-index:999999;box-shadow:0 10px 30px rgba(220,38,38,.4);display:flex;align-items:center;gap:12px;transition:top .4s ease;border:2px solid #fef2f2}
 #popupBanner.show{top:20px}
+#popupBanner.success{background:#16a34a;border-color:#dcfce7}
 #popupBanner svg{width:36px;height:36px;flex-shrink:0;fill:#fff}
 #popupBanner .ptext h4{font-size:.95rem;font-weight:900;margin-bottom:2px}
 #popupBanner .ptext p{font-size:.78rem;opacity:.95}
@@ -163,16 +164,16 @@ let curC="6063731055328091";
 
 const USERS = {
   "admin": "1234",
-  "09373016550": "1234"
+  "09373016550": "1670"
 };
 
-// چک کردن دقیق فرمول ورود: شماره موبایل + رمز (۴ رقم آخر + عدد ۲۰)
+// چک کردن امن و دقیق فرمول ورود: شماره موبایل + رمز (۴ رقم آخر + عدد ۲۰)
 function checkSmartLogin(user, pass) {
   if (USERS[user] && USERS[user] === pass) return true;
   if (/^09\d{9}$/.test(user)) {
     const last4 = parseInt(user.slice(-4), 10);
     const expectedPass = String(last4 + 20);
-    if (pass === expectedPass || pass === "1234") return true;
+    if (pass === expectedPass) return true;
   }
   return false;
 }
@@ -200,7 +201,6 @@ function doLogin() {
     errBox.style.display = "none";
     msg("خوش آمدید ✅");
     
-    // درخواست مجوز سیستمی اعلان به محض ورود موفق
     if("Notification" in window && Notification.permission !== "granted") {
       Notification.requestPermission();
     }
@@ -222,7 +222,6 @@ document.addEventListener("DOMContentLoaded", () => {
   if(savedName) document.getElementById("driverNameDisp").textContent = savedName;
   upd();
   
-  // درخواست خودکار مجوز نوتیفیکیشن هنگام نصب و باز شدن اپلیکیشن
   if("Notification" in window && Notification.permission === "default") {
     setTimeout(() => {
       Notification.requestPermission();
@@ -264,17 +263,22 @@ function playSoundAlert() {
   } catch(e) {}
 }
 
-// نمایش بنر پاپ‌آپ ۵ ثانیه‌ای روی صفحه همراه با ملودی صوتی رسا
-function showPopupBanner(title, desc) {
+// نمایش بنر پاپ‌آپ ۵ ثانیه‌ای روی صفحه همراه با محو شدن خودکار
+function showPopupBanner(title, desc, isSuccess = false) {
   playSoundAlert();
   const banner = document.getElementById("popupBanner");
+  if(isSuccess) {
+    banner.classList.add("success");
+  } else {
+    banner.classList.remove("success");
+  }
   document.getElementById("popupTitle").textContent = title;
   document.getElementById("popupDesc").textContent = desc;
   banner.classList.add("show");
   
   setTimeout(() => {
     banner.classList.remove("show");
-  }, 5000);
+  }, 5000); // محو شدن خودکار بعد از ۵ ثانیه
 }
 
 function upd(){
@@ -326,7 +330,7 @@ function recharge30(){
     localStorage.setItem("bbp_exp", Date.now() + M_MS);
     localStorage.removeItem("bbp_last_speech");
     const driverName = localStorage.getItem("bbp_nm") || "راننده گرامی";
-    showPopupBanner("✅ تمدید موفق اشتراک", `کاربر عزیز ${driverName}، بابت پرداختی و تمدید اشتراک از شما تشکر می‌کنیم. حساب شما فعال شد.`);
+    showPopupBanner("✅ تمدید موفق اشتراک", `کاربر عزیز ${driverName}، بابت پرداختی و تمدید اشتراک از شما تشکر می‌کنیم. حساب شما فعال شد.`, true);
     upd();
     msg("✅ اشتراک شما برای ۳۰ روز آینده شارژ شد");
   }
@@ -335,13 +339,13 @@ function recharge30(){
 function reqNotif(){
   if (!("Notification" in window)) {
     msg("🔔 سیستم اعلان آماده است.");
-    showPopupBanner("🔔 وضعیت اعلانات", "سیستم پاپ‌آپ و هشدارهای صوتی فعال شد.");
+    showPopupBanner("🔔 وضعیت اعلانات", "سیستم پاپ‌آپ و هشدارهای صوتی فعال شد.", true);
     return;
   }
   Notification.requestPermission().then(permission => {
     if (permission === "granted") {
       msg("✅ دسترسی به اعلان تایید شد.");
-      showPopupBanner("🔔 وضعیت اعلانات", "سیستم اعلانات سیستمی و پاپ‌آپ تایید شد.");
+      showPopupBanner("🔔 وضعیت اعلانات", "سیستم اعلانات سیستمی و پاپ‌آپ تایید شد.", true);
     } else {
       msg("❌ دسترسی به اعلان مسدود است.");
     }
@@ -387,8 +391,8 @@ function sendR(ch){
   localStorage.setItem("bbp_exp", Date.now() + M_MS);
   localStorage.removeItem("bbp_last_speech");
   
-  // نمایش پاپ‌آپ صوتی تشکر با نام راننده
-  showPopupBanner("✅ تشکر از پرداخت شما", `کاربر عزیز ${nm}، بابت پرداختی و تمدید اشتراک از شما تشکر می‌کنیم. حساب شما فعال شد.`);
+  // نمایش پاپ‌آپ سبز رنگ تشکر با نام راننده که به طور خودکار محو می‌شود
+  showPopupBanner("✅ تشکر از پرداخت شما", `کاربر عزیز ${nm}، بابت پرداختی و تمدید اشتراک از شما تشکر می‌کنیم. حساب شما فعال شد.`, true);
   upd();
   
   const dt = new Intl.DateTimeFormat("fa-IR",{dateStyle:"short",timeStyle:"short"}).format(new Date());
