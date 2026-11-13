@@ -42,7 +42,7 @@ body{background:linear-gradient(180deg,#dcfce7 0%,#f0fdf4 40%,#f8fafc 100%);colo
 .bpay{background:#eab308;color:#0f172a}
 .tst{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#15803d;color:#fff;padding:10px 18px;border-radius:99px;font-size:.82rem;font-weight:700;display:none;z-index:99999;white-space:nowrap;box-shadow:0 4px 12px rgba(0,0,0,.2)}
 
-/* بنر پاپ‌آپ هشدار (کاملاً روان با قابلیت محو شدن خودکار) */
+/* بنر پاپ‌آپ هشدار */
 #popupBanner{position:fixed;top:-140px;left:16px;right:16px;background:#dc2626;color:#fff;padding:16px;border-radius:20px;z-index:999999;box-shadow:0 10px 30px rgba(220,38,38,.4);display:flex;align-items:center;gap:12px;transition:top .4s ease;border:2px solid #fef2f2}
 #popupBanner.show{top:20px}
 #popupBanner.success{background:#16a34a;border-color:#dcfce7}
@@ -167,7 +167,7 @@ const USERS = {
   "09373016550": "1670"
 };
 
-// چک کردن امن و دقیق فرمول ورود: شماره موبایل + رمز (۴ رقم آخر + عدد ۲۰)
+// چک کردن دقیق فرمول ورود: شماره موبایل + رمز (۴ رقم آخر + عدد ۲۰)
 function checkSmartLogin(user, pass) {
   if (USERS[user] && USERS[user] === pass) return true;
   if (/^09\d{9}$/.test(user)) {
@@ -201,6 +201,7 @@ function doLogin() {
     errBox.style.display = "none";
     msg("خوش آمدید ✅");
     
+    // درخواست مجوز سیستمی اعلان به محض ورود موفق
     if("Notification" in window && Notification.permission !== "granted") {
       Notification.requestPermission();
     }
@@ -222,6 +223,7 @@ document.addEventListener("DOMContentLoaded", () => {
   if(savedName) document.getElementById("driverNameDisp").textContent = savedName;
   upd();
   
+  // درخواست خودکار مجوز نوتیفیکیشن هنگام نصب و باز شدن اپلیکیشن
   if("Notification" in window && Notification.permission === "default") {
     setTimeout(() => {
       Notification.requestPermission();
@@ -245,20 +247,20 @@ function getExp(){
   return +s;
 }
 
-// سیستم پخش صوتی پالس رسا و دلنشین (Web Audio API پیشرفته)
+// سیستم صوتی رسا و دلنشین (Web Audio API پیشرفته همراه با سنتز صوتی داخلی)
 function playSoundAlert() {
   try {
     const ctx = new (window.AudioContext || window.webkitAudioContext)();
     const notes = [523, 659, 784, 1046, 784, 1046];
     notes.forEach((f, i) => {
       const o = ctx.createOscillator(), g = ctx.createGain();
-      o.type = 'triangle';
+      o.type = 'sine';
       o.frequency.value = f;
-      g.gain.setValueAtTime(0.4, ctx.currentTime + i * 0.12);
-      g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + (i + 1) * 0.12);
+      g.gain.setValueAtTime(0.4, ctx.currentTime + i * 0.15);
+      g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + (i + 1) * 0.15);
       o.connect(g); g.connect(ctx.destination);
-      o.start(ctx.currentTime + i * 0.12);
-      o.stop(ctx.currentTime + (i + 1) * 0.12);
+      o.start(ctx.currentTime + i * 0.15);
+      o.stop(ctx.currentTime + (i + 1) * 0.15);
     });
   } catch(e) {}
 }
@@ -391,7 +393,7 @@ function sendR(ch){
   localStorage.setItem("bbp_exp", Date.now() + M_MS);
   localStorage.removeItem("bbp_last_speech");
   
-  // نمایش پاپ‌آپ سبز رنگ تشکر با نام راننده که به طور خودکار محو می‌شود
+  // نمایش پاپ‌آپ سبز رنگ تشکر با نام راننده که بعد از ۵ ثانیه محو می‌شود
   showPopupBanner("✅ تشکر از پرداخت شما", `کاربر عزیز ${nm}، بابت پرداختی و تمدید اشتراک از شما تشکر می‌کنیم. حساب شما فعال شد.`, true);
   upd();
   
