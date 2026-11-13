@@ -7,7 +7,6 @@ on:
 
 jobs:
   build:
-  
     runs-on: ubuntu-latest
 
     steps:
@@ -38,7 +37,7 @@ jobs:
           npx cap init "باربرگ بندر پی" "com.barbarg.bandarpay" --web-dir www
           npx cap add android
 
-          # قرار دادن لوگو به عنوان آیکون برنامه
+          # تنظیم خودکار آیکون برنامه از روی logo.png
           if [ -f logo.png ]; then
             mkdir -p android/app/src/main/res/mipmap-xxxhdpi/
             cp logo.png android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png
