@@ -40,6 +40,13 @@ body{background:linear-gradient(180deg,#dcfce7 0%,#f0fdf4 40%,#f8fafc 100%);colo
 .bwa{background:#16a34a;color:#fff}.bsms{background:#0f172a;color:#fff}.bpay{background:#eab308;color:#0f172a}
 .tst{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#15803d;color:#fff;padding:10px 18px;border-radius:99px;font-size:.82rem;font-weight:700;display:none;z-index:99999;white-space:nowrap;box-shadow:0 4px 12px rgba(0,0,0,.2)}
 
+/* استایل بنر پاپ‌آپ هشدار (۵ ثانیه‌ای روی صفحه) */
+#popupBanner{position:fixed;top:-120px;left:16px;right:16px;background:#dc2626;color:#fff;padding:16px;border-radius:20px;z-index:999999;box-shadow:0 10px 30px rgba(220,38,38,.4);display:flex;align-items:center;gap:12px;transition:top .4s ease;border:2px solid #fef2f2}
+#popupBanner.show{top:20px}
+#popupBanner svg{width:36px;height:36px;flex-shrink:0;fill:#fff}
+#popupBanner .ptext h4{font-size:.95rem;font-weight:900;margin-bottom:2px}
+#popupBanner .ptext p{font-size:.78rem;opacity:.95}
+
 /* صفحه ورود */
 #loginModal{position:fixed;inset:0;background:linear-gradient(160deg,#14532d 0%,#15803d 50%,#0f172a 100%);display:flex;align-items:center;justify-content:center;z-index:99999;padding:16px}
 .lbox{background:#fff;width:100%;max-width:380px;border-radius:24px;padding:24px 20px;text-align:center;box-shadow:0 20px 40px rgba(0,0,0,.3);border:2px solid #bbf7d0}
@@ -54,6 +61,15 @@ body{background:linear-gradient(180deg,#dcfce7 0%,#f0fdf4 40%,#f8fafc 100%);colo
 </style>
 </head>
 <body>
+
+<!-- بنر پاپ‌آپ هشدار ۵ ثانیه‌ای روی صفحه -->
+<div id="popupBanner">
+  <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+  <div class="ptext">
+    <h4 id="popupTitle">⚠️ یادآوری تمدید اشتراک</h4>
+    <p id="popupDesc">راننده محترم، نوبت واریزی و تمدید اشتراک شما فرا رسیده است.</p>
+  </div>
+</div>
 
 <div id="loginModal">
   <div class="lbox">
@@ -214,16 +230,15 @@ function getExp(){
   return +s;
 }
 
-// سیستم صوتی زنانه با ترکیب Web Audio API پیشرفته برای ساخت پالس‌های صوتی رسا و گفتار
-function speakVoice(text){
+// نمایش بنر پاپ‌آپ صوتی و بصری (۵ ثانیه روی صفحه) همراه با ملودی هشدار رسا
+function showPopupBanner(title, desc) {
   try {
     const ctx = new (window.AudioContext || window.webkitAudioContext)();
-    // ایجاد ملودی بپ صوتی واضح
-    [523, 659, 784, 1046].forEach((f, i) => {
+    [523, 659, 784, 1046, 1318].forEach((f, i) => {
       const o = ctx.createOscillator(), g = ctx.createGain();
       o.type = 'sine';
       o.frequency.value = f;
-      g.gain.setValueAtTime(0.3, ctx.currentTime + i * 0.12);
+      g.gain.setValueAtTime(0.25, ctx.currentTime + i * 0.12);
       g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + (i + 1) * 0.12);
       o.connect(g); g.connect(ctx.destination);
       o.start(ctx.currentTime + i * 0.12);
@@ -231,18 +246,14 @@ function speakVoice(text){
     });
   } catch(e) {}
 
-  if ('speechSynthesis' in window) {
-    try {
-      window.speechSynthesis.resume();
-      window.speechSynthesis.cancel();
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = 'fa-IR';
-      utterance.rate = 0.9;
-      utterance.pitch = 1.3; // تن صدای زنانه
-      utterance.volume = 1.0;
-      window.speechSynthesis.speak(utterance);
-    } catch(e) {}
-  }
+  const banner = document.getElementById("popupBanner");
+  document.getElementById("popupTitle").textContent = title;
+  document.getElementById("popupDesc").textContent = desc;
+  banner.classList.add("show");
+  
+  setTimeout(() => {
+    banner.classList.remove("show");
+  }, 6000); // نمایش ۵ ثانیه‌ای پاپ‌آپ
 }
 
 function upd(){
@@ -274,7 +285,7 @@ function upd(){
     
     if (now - lastSpoken > thirtyMinutes) {
       const driverName = localStorage.getItem("bbp_nm") || "راننده محترم";
-      speakVoice(`کاربر عزیز ${driverName}، یادآوری می‌کنیم نوبت واریزی و تمدید اشتراک شما فرا رسیده است.`);
+      showPopupBanner("⚠️ یادآوری تمدید اشتراک", `کاربر عزیز ${driverName}، نوبت واریزی و تمدید اشتراک شما فرا رسیده است.`);
       if("Notification" in window && Notification.permission === "granted"){
         try {
           new Notification("⚠️ یادآوری باربرگ بندر پی", {body: `${driverName} عزیز، نوبت واریزی شما رسیده است.`, icon: "logo.png"});
@@ -294,7 +305,7 @@ function recharge30(){
     localStorage.setItem("bbp_exp", Date.now() + M_MS);
     localStorage.removeItem("bbp_last_speech");
     const driverName = localStorage.getItem("bbp_nm") || "راننده گرامی";
-    speakVoice(`کاربر عزیز ${driverName}، بابت پرداختی و تمدید اشتراک از شما تشکر می‌کنیم. حساب شما فعال شد.`);
+    showPopupBanner("✅ تمدید موفق اشتراک", `کاربر عزیز ${driverName}، بابت پرداختی و تمدید اشتراک از شما تشکر می‌کنیم. حساب شما فعال شد.`);
     upd();
     msg("✅ اشتراک شما برای ۳۰ روز آینده شارژ شد");
   }
@@ -303,13 +314,13 @@ function recharge30(){
 function reqNotif(){
   if (!("Notification" in window)) {
     msg("🔔 سیستم اعلان آماده است.");
-    speakVoice("سیستم اعلانات و هشدار صوتی فعال شد.");
+    showPopupBanner("🔔 وضعیت اعلانات", "سیستم پاپ‌آپ و هشدارهای صوتی فعال شد.");
     return;
   }
   Notification.requestPermission().then(permission => {
     if (permission === "granted") {
       msg("✅ دسترسی به اعلان تایید شد.");
-      speakVoice("سیستم اعلانات و هشدار صوتی فعال شد.");
+      showPopupBanner("🔔 وضعیت اعلانات", "سیستم اعلانات سیستمی و پاپ‌آپ تایید شد.");
     } else {
       msg("❌ دسترسی به اعلان مسدود است.");
     }
@@ -318,12 +329,12 @@ function reqNotif(){
 
 function testAlrm(){
   const driverName = localStorage.getItem("bbp_nm") || "راننده محترم";
-  speakVoice(`کاربر عزیز ${driverName}، یادآوری می‌کنیم نوبت واریزی و تمدید اشتراک شما فرا رسیده است.`);
+  showPopupBanner("🚨 تست هشدار ۳ روزه", `کاربر عزیز ${driverName}، یادآوری می‌کنیم نوبت واریزی و تمدید اشتراک شما فرا رسیده است.`);
   alrt.style.display = "block";
   pBar.style.background = "#dc2626";
   bdg.textContent = "نیاز به تمدید فوری! (تست)";
   bdg.style.color = "#dc2626";
-  msg("🚨 تست صوتی گوینده زن اجرا شد");
+  msg("🚨 تست هشدار پاپ‌آپ و صوتی اجرا شد");
   if("Notification" in window && Notification.permission === "granted"){
     try {
       new Notification("تست آلارم باربرگ", {body: `${driverName} عزیز، نوبت واریزی شما رسیده است.`, icon: "logo.png"});
@@ -355,8 +366,8 @@ function sendR(ch){
   localStorage.setItem("bbp_exp", Date.now() + M_MS);
   localStorage.removeItem("bbp_last_speech");
   
-  // پخش صوتی شخصی‌سازی‌شده تشکر با نام راننده
-  speakVoice(`کاربر عزیز ${nm}، بابت پرداختی و تمدید اشتراک از شما تشکر می‌کنیم. حساب شما فعال شد.`);
+  // نمایش پاپ‌آپ تبریک و تشکر با نام راننده
+  showPopupBanner("✅ تشکر از پرداخت شما", `کاربر عزیز ${nm}، بابت پرداختی و تمدید اشتراک از شما تشکر می‌کنیم. حساب شما فعال شد.`);
   upd();
   
   const dt = new Intl.DateTimeFormat("fa-IR",{dateStyle:"short",timeStyle:"short"}).format(new Date());
