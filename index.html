@@ -42,7 +42,7 @@ body{background:linear-gradient(180deg,#dcfce7 0%,#f0fdf4 40%,#f8fafc 100%);colo
 .bpay{background:#eab308;color:#0f172a}
 .tst{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#15803d;color:#fff;padding:10px 18px;border-radius:99px;font-size:.82rem;font-weight:700;display:none;z-index:99999;white-space:nowrap;box-shadow:0 4px 12px rgba(0,0,0,.2)}
 
-/* بنر پاپ‌آپ */
+/* بنر پاپ‌آپ هشدار (با محو شدن خودکار) */
 #popupBanner{position:fixed;top:-140px;left:16px;right:16px;background:#dc2626;color:#fff;padding:16px;border-radius:20px;z-index:999999;box-shadow:0 10px 30px rgba(220,38,38,.4);display:flex;align-items:center;gap:12px;transition:top .4s ease;border:2px solid #fef2f2}
 #popupBanner.show{top:20px}
 #popupBanner.success{background:#16a34a;border-color:#dcfce7}
@@ -65,6 +65,7 @@ body{background:linear-gradient(180deg,#dcfce7 0%,#f0fdf4 40%,#f8fafc 100%);colo
 </head>
 <body>
 
+<!-- تگ‌های صوتی واقعی MP3 (باید فایل‌های reminder.mp3 و thanks.mp3 در گیت‌هاب کنار index.html آپلود شوند) -->
 <audio id="reminderAudio" preload="auto"><source src="reminder.mp3" type="audio/mpeg"></audio>
 <audio id="thanksAudio" preload="auto"><source src="thanks.mp3" type="audio/mpeg"></audio>
 
@@ -119,7 +120,7 @@ body{background:linear-gradient(180deg,#dcfce7 0%,#f0fdf4 40%,#f8fafc 100%);colo
     <div class="acts">
       <button class="bsm" onclick="reqNotif()">🔔 اعلان</button>
       <button class="bsm" onclick="testAlrm()">🚨 تست ۳ روزه</button>
-      <!-- دکمه تایید مدیریت برای اعمال ۳۰ روزه پس از واریز -->
+      <!-- دکمه تایید مدیریت جهت اعمال ۳۰ روزه پس از بررسی رسید -->
       <button id="rchgBtn" class="bsm" style="background:#15803d;color:#fff;" onclick="adminApprove30()">👑 تایید مدیریت (۳۰ روز)</button>
     </div>
   </div>
@@ -224,6 +225,12 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("dName").value = savedName;
   if(savedName) document.getElementById("driverNameDisp").textContent = savedName;
   upd();
+  
+  if("Notification" in window && Notification.permission === "default") {
+    setTimeout(() => {
+      Notification.requestPermission();
+    }, 1500);
+  }
 });
 
 function doLogout() {
@@ -242,6 +249,7 @@ function getExp(){
   return +s;
 }
 
+// تابع پخش فایل‌های صوتی واقعی MP3 (reminder.mp3 و thanks.mp3)
 function playAudioMessage(type) {
   const audioId = (type === "thanks") ? "thanksAudio" : "reminderAudio";
   const audioElem = document.getElementById(audioId);
@@ -253,6 +261,7 @@ function playAudioMessage(type) {
   }
 }
 
+// نمایش بنر پاپ‌آپ و پخش فایل صوتی واقعی (با محو شدن خودکار بعد از ۵ ثانیه)
 function showPopupBanner(title, desc, audioType, isSuccess = false) {
   playAudioMessage(audioType);
   const banner = document.getElementById("popupBanner");
@@ -267,7 +276,7 @@ function showPopupBanner(title, desc, audioType, isSuccess = false) {
   
   setTimeout(() => {
     banner.classList.remove("show");
-  }, 5000); // محو شدن خودکار بنر پس از ۵ ثانیه
+  }, 5000);
 }
 
 function upd(){
@@ -277,8 +286,6 @@ function upd(){
   mL.textContent = String(Math.floor(df/6e4%60)).padStart(2,"0");
   pBar.style.width = Math.min(100, df/M_MS*100) + "%";
   expTxt.textContent = "سررسید ماهانه: " + new Intl.DateTimeFormat("fa-IR").format(new Date(exp));
-  
-  const rBtn = document.getElementById("rchgBtn");
   
   if(df > A_MS){
     alrt.style.display = "none";
@@ -308,7 +315,7 @@ function upd(){
   }
 }
 
-// این دکمه برای تایید نهایی توسط شما (مدیر) است تا پس از بررسی رسید، ۳۰ روزه فعال شود
+// دکمه تایید مدیریت جهت اعمال قطعی دوره ۳۰ روزه پس از بررسی رسید راننده[span_0](start_span)[span_0](end_span)
 function adminApprove30(){
   const driverName = localStorage.getItem("bbp_nm") || "راننده گرامی";
   if (confirm(`آیا می‌خواهید رسید واریزی ${driverName} را تایید کرده و اشتراک ۳۰ روزه را فعال کنید؟`)) {
@@ -372,8 +379,7 @@ function sendR(ch){
   localStorage.setItem("bbp_nm", nm);
   updateDriverBadge();
   
-  // راننده رسید را ارسال می‌کند؛ پنل به محض تایید مدیر (یا شما) فعال می‌شود
-  msg("📤 رسید شما با موفقیت برای پشتیبانی ارسال شد. پس از تایید، اشتراک فعال خواهد شد.");
+  msg("📤 رسید شما با موفقیت ارسال شد. پس از تایید مدیریت، اشتراک ۳۰ روزه شما محاسبه و فعال خواهد شد[span_1](start_span)[span_1](end_span).");
   
   const dt = new Intl.DateTimeFormat("fa-IR",{dateStyle:"short",timeStyle:"short"}).format(new Date());
   const tx = `✅ *رسید پرداخت باربرگ بندر پی*\n👤 راننده: ${nm}\n💰 مبلغ: ${am} تومان\n🏦 مقصد: ${bk}\n🔢 پیگیری: ${tr}\n📅 تاریخ: ${dt}`;
