@@ -159,20 +159,20 @@ body{background:linear-gradient(180deg,#dcfce7 0%,#f0fdf4 40%,#f8fafc 100%);colo
 <div id="tst" class="tst"></div>
 
 <script>
-const M_MS=2592e6, A_MS=2592e5;
-let curC="6063731055328091";
+const M_MS = 2592e6, A_MS = 2592e5; // M_MS = 30 days, A_MS = 3 days in milliseconds
+let curC = "6063731055328091";
 
 const USERS = {
   "admin": "1234",
   "09373016550": "1670"
 };
 
-// دریافت نام کاربری (شماره موبایل) فعال
+// دریافت نام کاربری
 function getActiveUser() {
   return localStorage.getItem("bbp_logged_user") || "guest";
 }
 
-// ساخت کلید اختصاصی برای هر راننده تا تداخل ایجاد نشود
+// ساخت کلید اختصاصی برای جلوگیری از تداخل اطلاعات راننده‌ها
 function uKey(keyName) {
   return `bbp_${keyName}_${getActiveUser()}`;
 }
@@ -195,6 +195,12 @@ function checkAuth() {
   }
 }
 
+function askNotificationPermission() {
+  if ("Notification" in window && Notification.permission !== "granted") {
+    Notification.requestPermission();
+  }
+}
+
 function doLogin() {
   const uInput = document.getElementById("uInp");
   const pInput = document.getElementById("pInp");
@@ -210,12 +216,11 @@ function doLogin() {
     errBox.style.display = "none";
     msg("خوش آمدید ✅");
     
+    // درخواست دسترسی به نوتیفیکیشن در لحظه ورود کاربر
+    askNotificationPermission();
+    
     loadDriverData();
     upd();
-    
-    if("Notification" in window && Notification.permission !== "granted") {
-      Notification.requestPermission();
-    }
   } else {
     errBox.style.display = "block";
   }
@@ -243,10 +248,9 @@ document.addEventListener("DOMContentLoaded", () => {
   loadDriverData();
   upd();
   
-  if("Notification" in window && Notification.permission === "default") {
-    setTimeout(() => {
-      Notification.requestPermission();
-    }, 1500);
+  // اگر کاربر از قبل لاگین است، دسترسی به نوتیفیکیشن را بررسی می‌کنیم
+  if (localStorage.getItem("bbp_logged_user")) {
+    askNotificationPermission();
   }
 });
 
@@ -257,17 +261,14 @@ function doLogout() {
   }
 }
 
-// در اینجا اگر کاربر تازه وارد شده باشد و پرداخت نکرده باشد، مقدار null برمی‌گردد
 function getExp(){
   const key = uKey("exp");
   let s = localStorage.getItem(key);
-  if(!s){
-    return null; // یعنی کاربر هنوز پرداختی نداشته
-  }
+  if(!s) return null; // یعنی کاربر هنوز پرداخت نکرده
   return +s;
 }
 
-// سیستم ملودی پشتیبان
+// سیستم ملودی (بوق)
 function playSoundAlert() {
   try {
     const ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -285,9 +286,9 @@ function playSoundAlert() {
   } catch(e) {}
 }
 
-// سیستم پخش صدای زنانه + پخش اجباری بوق برای گوشی‌هایی که صدای فارسی ندارند
+// تلاش برای پخش صدای گوینده + بوق همزمان
 function playVoiceAlert(text) {
-  playSoundAlert(); // بوق در هر صورت پخش می‌شود تا سکوت نباشد
+  playSoundAlert();
   if ('speechSynthesis' in window) {
     window.speechSynthesis.cancel(); 
     const msg = new SpeechSynthesisUtterance(text);
@@ -313,6 +314,14 @@ function showPopupBanner(title, desc, isSuccess = false) {
   setTimeout(() => {
     banner.classList.remove("show");
   }, 5000);
+}
+
+function sendPushNotification(title, body) {
+  if ("Notification" in window && Notification.permission === "granted") {
+    try {
+      new Notification(title, { body: body, icon: "logo.png" });
+    } catch(e) {}
+  }
 }
 
 function upd(){
@@ -342,11 +351,12 @@ function upd(){
     badgeStatus.style.color = "#dc2626";
     
     rBtn.classList.remove("locked");
-    return; // توقف در اینجا برای کاربری که پرداخت نکرده
+    return; // توقف - هیچ نوتیف و هشداری برای کاربری که پرداخت نکرده پخش نمی‌شود
   }
 
   // محاسبه زمان برای کاربرانی که پرداخت کرده‌اند
-  const df = Math.max(0, exp - Date.now());
+  const nowTime = Date.now();
+  const df = Math.max(0, exp - nowTime);
   document.getElementById("dL").textContent = Math.floor(df/864e5).toString().padStart(2,"0");
   document.getElementById("hL").textContent = String(Math.floor(df/36e5%24)).padStart(2,"0");
   document.getElementById("mL").textContent = String(Math.floor(df/6e4%60)).padStart(2,"0");
@@ -354,6 +364,7 @@ function upd(){
   pBar.style.width = Math.min(100, df/M_MS*100) + "%";
   document.getElementById("expTxt").textContent = "سررسید ماهانه: " + new Intl.DateTimeFormat("fa-IR").format(new Date(exp));
   
+  // اگر بیشتر از 3 روز اعتبار باقیست (بدون هیچ هشدار و نوتیفیکیشنی)
   if(df > A_MS){
     alrt.style.display = "none";
     pBar.style.background = "linear-gradient(90deg,#15803d,#22c55e)";
@@ -363,7 +374,12 @@ function upd(){
     badgeStatus.style.background = "#dcfce7";
     badgeStatus.style.color = "#15803d";
     rBtn.classList.add("locked");
-  } else {
+    
+    // پاک کردن تاریخچه آخرین هشدار تا در دوره بعدی درست کار کند
+    localStorage.removeItem(uKey("last_speech"));
+  } 
+  // اگر رسیدیم به 3 روز آخر (کمتر از 72 ساعت) -> شروع هشدارهای نیم ساعته
+  else {
     alrt.style.display = "block";
     alrt.innerHTML = "<b>⚠️ هشدار پایان اعتبار حساب کاربری!</b>راننده گرامی، کمتر از ۳ روز به پایان اشتراک ماهانه شما باقی مانده است. لطفاً جهت تمدید اقدام نمایید.";
     pBar.style.background = "#dc2626";
@@ -374,24 +390,21 @@ function upd(){
     badgeStatus.style.color = "#dc2626";
     rBtn.classList.remove("locked");
     
-    const now = Date.now();
     const lastSpokenKey = uKey("last_speech");
     const lastSpoken = Number(localStorage.getItem(lastSpokenKey) || 0);
-    const thirtyMinutes = 30 * 60 * 1000;
+    const thirtyMinutes = 30 * 60 * 1000; // 30 minutes
     
-    if (now - lastSpoken > thirtyMinutes) {
+    // بررسی اینکه آیا از آخرین هشدار 30 دقیقه گذشته است یا خیر
+    if (nowTime - lastSpoken >= thirtyMinutes) {
       const driverName = localStorage.getItem(uKey("nm")) || "راننده محترم";
       const voiceText = `کاربر عزیز ${driverName}، نوبت واریزی و تمدید اشتراک شما فرا رسیده است.`;
       
       showPopupBanner("⚠️ یادآوری تمدید اشتراک", voiceText);
       playVoiceAlert(voiceText); 
+      sendPushNotification("⚠️ یادآوری باربرگ بندر پی", `${driverName} عزیز، نوبت واریزی شما رسیده است.`);
       
-      if("Notification" in window && Notification.permission === "granted"){
-        try {
-          new Notification("⚠️ یادآوری باربرگ بندر پی", {body: `${driverName} عزیز، نوبت واریزی شما رسیده است.`, icon: "logo.png"});
-        } catch(e) {}
-      }
-      localStorage.setItem(lastSpokenKey, now);
+      // ذخیره زمان فعلی به عنوان زمان آخرین هشدار
+      localStorage.setItem(lastSpokenKey, nowTime);
     }
   }
 }
@@ -406,7 +419,15 @@ function recharge30(){
     localStorage.removeItem(uKey("last_speech"));
     
     const driverName = localStorage.getItem(uKey("nm")) || "راننده گرامی";
-    showPopupBanner("✅ تمدید موفق اشتراک", `کاربر عزیز ${driverName}، بابت پرداختی و تمدید اشتراک از شما تشکر می‌کنیم. حساب شما فعال شد.`, true);
+    const successText = `کاربر عزیز ${driverName}، بابت پرداختی و تمدید اشتراک از شما تشکر می‌کنیم.`;
+    
+    showPopupBanner("✅ تمدید موفق اشتراک", successText, true);
+    if ('speechSynthesis' in window) {
+      const msgVoice = new SpeechSynthesisUtterance(successText);
+      msgVoice.lang = 'fa-IR'; msgVoice.rate = 0.85; msgVoice.pitch = 1.4;
+      window.speechSynthesis.speak(msgVoice);
+    }
+    
     upd();
     msg("✅ اشتراک شما برای ۳۰ روز آینده شارژ شد");
   }
@@ -434,6 +455,7 @@ function testAlrm(){
   
   showPopupBanner("🚨 تست هشدار ۳ روزه", alertText);
   playVoiceAlert(alertText); 
+  sendPushNotification("تست آلارم باربرگ", `${driverName} عزیز، نوبت واریزی شما رسیده است.`);
   
   document.getElementById("alrt").style.display = "block";
   document.getElementById("pBar").style.background = "#dc2626";
@@ -442,11 +464,6 @@ function testAlrm(){
   bdg.style.color = "#dc2626";
   msg("🚨 تست صوتی و بنر پاپ‌آپ اجرا شد");
   
-  if("Notification" in window && Notification.permission === "granted"){
-    try {
-      new Notification("تست آلارم باربرگ", {body: `${driverName} عزیز، نوبت واریزی شما رسیده است.`, icon: "logo.png"});
-    } catch(e) {}
-  }
   setTimeout(() => { upd(); }, 6000);
 }
 
@@ -489,9 +506,19 @@ function sendR(ch){
   
   // دقیقاً همینجا بعد از پر کردن فرم رسید، زمان‌سنج ۳۰ روزه استارت می‌خورد
   localStorage.setItem(uKey("exp"), Date.now() + M_MS);
+  
+  // پاک کردن زمان هشدار قبلی تا برنامه در دوره جدید سکوت کند
   localStorage.removeItem(uKey("last_speech"));
   
-  showPopupBanner("✅ تشکر از پرداخت شما", `کاربر عزیز ${nm}، بابت پرداختی و تمدید اشتراک از شما تشکر می‌کنیم. حساب شما فعال شد.`, true);
+  const successText = `کاربر عزیز ${nm}، بابت پرداختی و تمدید اشتراک از شما تشکر می‌کنیم.`;
+  showPopupBanner("✅ تشکر از پرداخت شما", successText, true);
+  
+  if ('speechSynthesis' in window) {
+    const msgVoice = new SpeechSynthesisUtterance(successText);
+    msgVoice.lang = 'fa-IR'; msgVoice.rate = 0.85; msgVoice.pitch = 1.4;
+    window.speechSynthesis.speak(msgVoice);
+  }
+  
   upd(); // رفرش کردن تایمر
   
   const dt = new Intl.DateTimeFormat("fa-IR",{dateStyle:"short",timeStyle:"short"}).format(new Date());
@@ -508,6 +535,7 @@ function msg(t){
   setTimeout(()=>tst.style.display="none",3500);
 }
 
+// بررسی وضعیت هر 30 ثانیه
 setInterval(upd, 30e3);
 
 let dp;
