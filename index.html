@@ -42,7 +42,7 @@ body{background:linear-gradient(180deg,#dcfce7 0%,#f0fdf4 40%,#f8fafc 100%);colo
 .bpay{background:#eab308;color:#0f172a}
 .tst{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#15803d;color:#fff;padding:10px 18px;border-radius:99px;font-size:.82rem;font-weight:700;display:none;z-index:99999;white-space:nowrap;box-shadow:0 4px 12px rgba(0,0,0,.2)}
 
-/* بنر پاپ‌آپ هشدار */
+/* بنر پاپ‌آپ */
 #popupBanner{position:fixed;top:-140px;left:16px;right:16px;background:#dc2626;color:#fff;padding:16px;border-radius:20px;z-index:999999;box-shadow:0 10px 30px rgba(220,38,38,.4);display:flex;align-items:center;gap:12px;transition:top .4s ease;border:2px solid #fef2f2}
 #popupBanner.show{top:20px}
 #popupBanner.success{background:#16a34a;border-color:#dcfce7}
@@ -64,6 +64,9 @@ body{background:linear-gradient(180deg,#dcfce7 0%,#f0fdf4 40%,#f8fafc 100%);colo
 </style>
 </head>
 <body>
+
+<audio id="reminderAudio" preload="auto"><source src="reminder.mp3" type="audio/mpeg"></audio>
+<audio id="thanksAudio" preload="auto"><source src="thanks.mp3" type="audio/mpeg"></audio>
 
 <div id="popupBanner">
   <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
@@ -98,8 +101,8 @@ body{background:linear-gradient(180deg,#dcfce7 0%,#f0fdf4 40%,#f8fafc 100%);colo
   </div>
 
   <div id="driverBadge" class="driver-badge">
-    <span>👤 راننده: <b id="driverNameDisp" style="color:#15803d;">ثبت نشده</b></span>
-    <span id="badgeStatus" style="font-size:0.72rem;background:#dcfce7;padding:4px 8px;border-radius:8px;color:#15803d;">فعال ✓</span>
+    <span>👤 راننده محترم: <b id="driverNameDisp" style="color:#15803d;">ثبت نشده</b></span>
+    <span style="font-size:0.72rem;background:#dcfce7;padding:4px 8px;border-radius:8px;color:#15803d;">فعال ✓</span>
   </div>
 
   <div id="alrt" class="alrt"><b>⚠️ هشدار پایان اعتبار حساب کاربری!</b>راننده گرامی، کمتر از ۳ روز به پایان اشتراک ماهانه شما باقی مانده است. لطفاً جهت تمدید و ارسال رسید اقدام نمایید.</div>
@@ -107,7 +110,7 @@ body{background:linear-gradient(180deg,#dcfce7 0%,#f0fdf4 40%,#f8fafc 100%);colo
   <div class="card">
     <div class="stitle"><span>⏳ روزشمار اعتبار ماهانه</span><span id="bdg">حساب فعال ✓</span></div>
     <div class="grid">
-      <div class="tbox"><span id="dL" class="tnum">00</span><span class="tlbl">روز مانده</span></div>
+      <div class="tbox"><span id="dL" class="tnum">30</span><span class="tlbl">روز مانده</span></div>
       <div class="tbox"><span id="hL" class="tnum">00</span><span class="tlbl">ساعت</span></div>
       <div class="tbox"><span id="mL" class="tnum">00</span><span class="tlbl">دقیقه</span></div>
     </div>
@@ -116,7 +119,8 @@ body{background:linear-gradient(180deg,#dcfce7 0%,#f0fdf4 40%,#f8fafc 100%);colo
     <div class="acts">
       <button class="bsm" onclick="reqNotif()">🔔 اعلان</button>
       <button class="bsm" onclick="testAlrm()">🚨 تست ۳ روزه</button>
-      <button id="rchgBtn" class="bsm" onclick="recharge30()">🔄 شارژ ۳۰ روزه</button>
+      <!-- دکمه تایید مدیریت برای اعمال ۳۰ روزه پس از واریز -->
+      <button id="rchgBtn" class="bsm" style="background:#15803d;color:#fff;" onclick="adminApprove30()">👑 تایید مدیریت (۳۰ روز)</button>
     </div>
   </div>
   <div class="card">
@@ -159,23 +163,13 @@ body{background:linear-gradient(180deg,#dcfce7 0%,#f0fdf4 40%,#f8fafc 100%);colo
 <div id="tst" class="tst"></div>
 
 <script>
-const M_MS = 2592e6, A_MS = 2592e5; // M_MS = 30 days, A_MS = 3 days in milliseconds
-let curC = "6063731055328091";
+const M_MS=2592e6, A_MS=2592e5;
+let curC="6063731055328091";
 
 const USERS = {
   "admin": "1234",
   "09373016550": "1670"
 };
-
-// دریافت نام کاربری
-function getActiveUser() {
-  return localStorage.getItem("bbp_logged_user") || "guest";
-}
-
-// ساخت کلید اختصاصی برای جلوگیری از تداخل اطلاعات راننده‌ها
-function uKey(keyName) {
-  return `bbp_${keyName}_${getActiveUser()}`;
-}
 
 function checkSmartLogin(user, pass) {
   if (USERS[user] && USERS[user] === pass) return true;
@@ -195,12 +189,6 @@ function checkAuth() {
   }
 }
 
-function askNotificationPermission() {
-  if ("Notification" in window && Notification.permission !== "granted") {
-    Notification.requestPermission();
-  }
-}
-
 function doLogin() {
   const uInput = document.getElementById("uInp");
   const pInput = document.getElementById("pInp");
@@ -216,24 +204,11 @@ function doLogin() {
     errBox.style.display = "none";
     msg("خوش آمدید ✅");
     
-    // درخواست دسترسی به نوتیفیکیشن در لحظه ورود کاربر
-    askNotificationPermission();
-    
-    loadDriverData();
-    upd();
+    if("Notification" in window && Notification.permission !== "granted") {
+      Notification.requestPermission();
+    }
   } else {
     errBox.style.display = "block";
-  }
-}
-
-function loadDriverData() {
-  const savedName = localStorage.getItem(uKey("nm")) || "";
-  document.getElementById("dName").value = savedName;
-  const disp = document.getElementById("driverNameDisp");
-  if(savedName) {
-    disp.textContent = savedName;
-  } else {
-    disp.textContent = "ثبت نشده";
   }
 }
 
@@ -245,13 +220,10 @@ document.addEventListener("DOMContentLoaded", () => {
     loginBtn.addEventListener("touchend", (e) => { e.preventDefault(); doLogin(); });
   }
   
-  loadDriverData();
+  const savedName = localStorage.getItem("bbp_nm") || "";
+  document.getElementById("dName").value = savedName;
+  if(savedName) document.getElementById("driverNameDisp").textContent = savedName;
   upd();
-  
-  // اگر کاربر از قبل لاگین است، دسترسی به نوتیفیکیشن را بررسی می‌کنیم
-  if (localStorage.getItem("bbp_logged_user")) {
-    askNotificationPermission();
-  }
 });
 
 function doLogout() {
@@ -262,48 +234,30 @@ function doLogout() {
 }
 
 function getExp(){
-  const key = uKey("exp");
-  let s = localStorage.getItem(key);
-  if(!s) return null; // یعنی کاربر هنوز پرداخت نکرده
+  let s = localStorage.getItem("bbp_exp");
+  if(!s){
+    s = Date.now() + M_MS;
+    localStorage.setItem("bbp_exp", s);
+  }
   return +s;
 }
 
-// سیستم ملودی (بوق)
-function playSoundAlert() {
-  try {
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
-    const notes = [523, 659, 784, 1046, 784, 1046];
-    notes.forEach((f, i) => {
-      const o = ctx.createOscillator(), g = ctx.createGain();
-      o.type = 'sine';
-      o.frequency.value = f;
-      g.gain.setValueAtTime(0.4, ctx.currentTime + i * 0.15);
-      g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + (i + 1) * 0.15);
-      o.connect(g); g.connect(ctx.destination);
-      o.start(ctx.currentTime + i * 0.15);
-      o.stop(ctx.currentTime + (i + 1) * 0.15);
+function playAudioMessage(type) {
+  const audioId = (type === "thanks") ? "thanksAudio" : "reminderAudio";
+  const audioElem = document.getElementById(audioId);
+  if (audioElem) {
+    audioElem.currentTime = 0;
+    audioElem.play().catch(error => {
+      console.log("Audio play blocked:", error);
     });
-  } catch(e) {}
-}
-
-// تلاش برای پخش صدای گوینده + بوق همزمان
-function playVoiceAlert(text) {
-  playSoundAlert();
-  if ('speechSynthesis' in window) {
-    window.speechSynthesis.cancel(); 
-    const msg = new SpeechSynthesisUtterance(text);
-    msg.lang = 'fa-IR'; 
-    msg.rate = 0.85;    
-    msg.pitch = 1.4;    
-    window.speechSynthesis.speak(msg);
   }
 }
 
-function showPopupBanner(title, desc, isSuccess = false) {
+function showPopupBanner(title, desc, audioType, isSuccess = false) {
+  playAudioMessage(audioType);
   const banner = document.getElementById("popupBanner");
   if(isSuccess) {
     banner.classList.add("success");
-    playSoundAlert(); 
   } else {
     banner.classList.remove("success");
   }
@@ -313,136 +267,69 @@ function showPopupBanner(title, desc, isSuccess = false) {
   
   setTimeout(() => {
     banner.classList.remove("show");
-  }, 5000);
-}
-
-function sendPushNotification(title, body) {
-  if ("Notification" in window && Notification.permission === "granted") {
-    try {
-      new Notification(title, { body: body, icon: "logo.png" });
-    } catch(e) {}
-  }
+  }, 5000); // محو شدن خودکار بنر پس از ۵ ثانیه
 }
 
 function upd(){
-  const exp = getExp();
-  const pBar = document.getElementById("pBar");
-  const rBtn = document.getElementById("rchgBtn");
-  const alrt = document.getElementById("alrt");
-  const bdg = document.getElementById("bdg");
-  const badgeStatus = document.getElementById("badgeStatus");
-
-  // حالت کاربر جدید که هنوز پرداخت و ارسال رسید نکرده است
-  if (exp === null) {
-    document.getElementById("dL").textContent = "00";
-    document.getElementById("hL").textContent = "00";
-    document.getElementById("mL").textContent = "00";
-    pBar.style.width = "0%";
-    pBar.style.background = "#dc2626";
-    document.getElementById("expTxt").textContent = "ابتدا پرداخت کنید تا زمان‌سنج فعال شود";
-    
-    alrt.style.display = "block";
-    alrt.innerHTML = "<b>⚠️ حساب کاربری غیرفعال است!</b>راننده گرامی، جهت فعال‌سازی حساب و شروع زمان‌سنج ۳۰ روزه، لطفاً مبلغ اشتراک را پرداخت و رسید را ارسال کنید.";
-    
-    bdg.textContent = "نیاز به پرداخت";
-    bdg.style.color = "#dc2626";
-    badgeStatus.textContent = "غیرفعال ❌";
-    badgeStatus.style.background = "#fef2f2";
-    badgeStatus.style.color = "#dc2626";
-    
-    rBtn.classList.remove("locked");
-    return; // توقف - هیچ نوتیف و هشداری برای کاربری که پرداخت نکرده پخش نمی‌شود
-  }
-
-  // محاسبه زمان برای کاربرانی که پرداخت کرده‌اند
-  const nowTime = Date.now();
-  const df = Math.max(0, exp - nowTime);
-  document.getElementById("dL").textContent = Math.floor(df/864e5).toString().padStart(2,"0");
-  document.getElementById("hL").textContent = String(Math.floor(df/36e5%24)).padStart(2,"0");
-  document.getElementById("mL").textContent = String(Math.floor(df/6e4%60)).padStart(2,"0");
-  
+  const exp = getExp(), df = Math.max(0, exp - Date.now());
+  dL.textContent = Math.floor(df/864e5);
+  hL.textContent = String(Math.floor(df/36e5%24)).padStart(2,"0");
+  mL.textContent = String(Math.floor(df/6e4%60)).padStart(2,"0");
   pBar.style.width = Math.min(100, df/M_MS*100) + "%";
-  document.getElementById("expTxt").textContent = "سررسید ماهانه: " + new Intl.DateTimeFormat("fa-IR").format(new Date(exp));
+  expTxt.textContent = "سررسید ماهانه: " + new Intl.DateTimeFormat("fa-IR").format(new Date(exp));
   
-  // اگر بیشتر از 3 روز اعتبار باقیست (بدون هیچ هشدار و نوتیفیکیشنی)
+  const rBtn = document.getElementById("rchgBtn");
+  
   if(df > A_MS){
     alrt.style.display = "none";
     pBar.style.background = "linear-gradient(90deg,#15803d,#22c55e)";
     bdg.textContent = "حساب فعال ✓";
     bdg.style.color = "#15803d";
-    badgeStatus.textContent = "فعال ✓";
-    badgeStatus.style.background = "#dcfce7";
-    badgeStatus.style.color = "#15803d";
-    rBtn.classList.add("locked");
-    
-    // پاک کردن تاریخچه آخرین هشدار تا در دوره بعدی درست کار کند
-    localStorage.removeItem(uKey("last_speech"));
-  } 
-  // اگر رسیدیم به 3 روز آخر (کمتر از 72 ساعت) -> شروع هشدارهای نیم ساعته
-  else {
+  } else {
     alrt.style.display = "block";
-    alrt.innerHTML = "<b>⚠️ هشدار پایان اعتبار حساب کاربری!</b>راننده گرامی، کمتر از ۳ روز به پایان اشتراک ماهانه شما باقی مانده است. لطفاً جهت تمدید اقدام نمایید.";
     pBar.style.background = "#dc2626";
     bdg.textContent = "نیاز به تمدید فوری!";
     bdg.style.color = "#dc2626";
-    badgeStatus.textContent = "نیاز به تمدید";
-    badgeStatus.style.background = "#fef2f2";
-    badgeStatus.style.color = "#dc2626";
-    rBtn.classList.remove("locked");
     
-    const lastSpokenKey = uKey("last_speech");
-    const lastSpoken = Number(localStorage.getItem(lastSpokenKey) || 0);
-    const thirtyMinutes = 30 * 60 * 1000; // 30 minutes
+    const now = Date.now();
+    const lastSpoken = Number(localStorage.getItem("bbp_last_speech") || 0);
+    const thirtyMinutes = 30 * 60 * 1000;
     
-    // بررسی اینکه آیا از آخرین هشدار 30 دقیقه گذشته است یا خیر
-    if (nowTime - lastSpoken >= thirtyMinutes) {
-      const driverName = localStorage.getItem(uKey("nm")) || "راننده محترم";
-      const voiceText = `کاربر عزیز ${driverName}، نوبت واریزی و تمدید اشتراک شما فرا رسیده است.`;
-      
-      showPopupBanner("⚠️ یادآوری تمدید اشتراک", voiceText);
-      playVoiceAlert(voiceText); 
-      sendPushNotification("⚠️ یادآوری باربرگ بندر پی", `${driverName} عزیز، نوبت واریزی شما رسیده است.`);
-      
-      // ذخیره زمان فعلی به عنوان زمان آخرین هشدار
-      localStorage.setItem(lastSpokenKey, nowTime);
+    if (now - lastSpoken > thirtyMinutes) {
+      const driverName = localStorage.getItem("bbp_nm") || "راننده محترم";
+      showPopupBanner("⚠️ یادآوری تمدید اشتراک", `کاربر عزیز ${driverName}، نوبت واریزی و تمدید اشتراک شما فرا رسیده است.`, "reminder");
+      if("Notification" in window && Notification.permission === "granted"){
+        try {
+          new Notification("⚠️ یادآوری باربرگ بندر پی", {body: `${driverName} عزیز، نوبت واریزی شما رسیده است.`, icon: "logo.png"});
+        } catch(e) {}
+      }
+      localStorage.setItem("bbp_last_speech", now);
     }
   }
 }
 
-function recharge30(){
-  const exp = getExp();
-  if (exp && (exp - Date.now() > A_MS)) {
-    return msg("اشتراک شما فعال است! امکان شارژ مجدد نیست.");
-  }
-  if (confirm("آیا واریز را انجام داده‌اید و می‌خواهید اشتراک ۳۰ روزه جدید فعال شود؟")) {
-    localStorage.setItem(uKey("exp"), Date.now() + M_MS);
-    localStorage.removeItem(uKey("last_speech"));
-    
-    const driverName = localStorage.getItem(uKey("nm")) || "راننده گرامی";
-    const successText = `کاربر عزیز ${driverName}، بابت پرداختی و تمدید اشتراک از شما تشکر می‌کنیم.`;
-    
-    showPopupBanner("✅ تمدید موفق اشتراک", successText, true);
-    if ('speechSynthesis' in window) {
-      const msgVoice = new SpeechSynthesisUtterance(successText);
-      msgVoice.lang = 'fa-IR'; msgVoice.rate = 0.85; msgVoice.pitch = 1.4;
-      window.speechSynthesis.speak(msgVoice);
-    }
-    
+// این دکمه برای تایید نهایی توسط شما (مدیر) است تا پس از بررسی رسید، ۳۰ روزه فعال شود
+function adminApprove30(){
+  const driverName = localStorage.getItem("bbp_nm") || "راننده گرامی";
+  if (confirm(`آیا می‌خواهید رسید واریزی ${driverName} را تایید کرده و اشتراک ۳۰ روزه را فعال کنید؟`)) {
+    localStorage.setItem("bbp_exp", Date.now() + M_MS);
+    localStorage.removeItem("bbp_last_speech");
+    showPopupBanner("✅ تایید موفق اشتراک", `کاربر عزیز ${driverName}، واریزی شما تایید شد و اشتراک ۳۰ روزه فعال گردید.`, "thanks", true);
     upd();
-    msg("✅ اشتراک شما برای ۳۰ روز آینده شارژ شد");
+    msg("✅ اشتراک ۳۰ روزه با موفقیت تایید و فعال شد");
   }
 }
 
 function reqNotif(){
   if (!("Notification" in window)) {
     msg("🔔 سیستم اعلان آماده است.");
-    showPopupBanner("🔔 وضعیت اعلانات", "سیستم پاپ‌آپ و هشدارهای صوتی فعال شد.", true);
+    showPopupBanner("🔔 وضعیت اعلانات", "سیستم پاپ‌آپ و هشدارهای صوتی فعال شد.", "thanks", true);
     return;
   }
   Notification.requestPermission().then(permission => {
     if (permission === "granted") {
       msg("✅ دسترسی به اعلان تایید شد.");
-      showPopupBanner("🔔 وضعیت اعلانات", "سیستم اعلانات سیستمی و پاپ‌آپ تایید شد.", true);
+      showPopupBanner("🔔 وضعیت اعلانات", "سیستم اعلانات سیستمی و پاپ‌آپ تایید شد.", "thanks", true);
     } else {
       msg("❌ دسترسی به اعلان مسدود است.");
     }
@@ -450,102 +337,55 @@ function reqNotif(){
 }
 
 function testAlrm(){
-  const driverName = localStorage.getItem(uKey("nm")) || "راننده محترم";
-  const alertText = `کاربر عزیز ${driverName}، یادآوری می‌کنیم نوبت واریزی و تمدید اشتراک شما فرا رسیده است.`;
-  
-  showPopupBanner("🚨 تست هشدار ۳ روزه", alertText);
-  playVoiceAlert(alertText); 
-  sendPushNotification("تست آلارم باربرگ", `${driverName} عزیز، نوبت واریزی شما رسیده است.`);
-  
-  document.getElementById("alrt").style.display = "block";
-  document.getElementById("pBar").style.background = "#dc2626";
-  const bdg = document.getElementById("bdg");
+  const driverName = localStorage.getItem("bbp_nm") || "راننده محترم";
+  showPopupBanner("🚨 تست هشدار ۳ روزه", `کاربر عزیز ${driverName}، یادآوری می‌کنیم نوبت واریزی و تمدید اشتراک شما فرا رسیده است.`, "reminder");
+  alrt.style.display = "block";
+  pBar.style.background = "#dc2626";
   bdg.textContent = "نیاز به تمدید فوری! (تست)";
   bdg.style.color = "#dc2626";
   msg("🚨 تست صوتی و بنر پاپ‌آپ اجرا شد");
-  
+  if("Notification" in window && Notification.permission === "granted"){
+    try {
+      new Notification("تست آلارم باربرگ", {body: `${driverName} عزیز، نوبت واریزی شما رسیده است.`, icon: "logo.png"});
+    } catch(e) {}
+  }
   setTimeout(() => { upd(); }, 6000);
 }
 
-function selC(n,t,id,ix){
-  curC=n;
-  document.getElementById("c1").classList.remove("sel");
-  document.getElementById("c2").classList.remove("sel");
-  document.getElementById(id).classList.add("sel");
-  document.getElementById("bSel").selectedIndex=ix;
-  navigator.clipboard.writeText(n);
-  msg("کارت "+t+" کپی شد 📋");
-}
-
-function copyNow(){
-  navigator.clipboard.writeText(curC);
-  msg("شماره کارت کپی شد! پس از واریز فرم زیر را پر کنید.");
-}
+function selC(n,t,id,ix){curC=n;c1.classList.remove("sel");c2.classList.remove("sel");document.getElementById(id).classList.add("sel");bSel.selectedIndex=ix;navigator.clipboard.writeText(n);msg("کارت "+t+" کپی شد 📋")}
+function copyNow(){navigator.clipboard.writeText(curC);msg("شماره کارت کپی شد! پس از واریز فرم زیر را پر کنید.")}
 
 function updateDriverBadge() {
   const val = document.getElementById("dName").value.trim();
   const disp = document.getElementById("driverNameDisp");
   if(val) {
     disp.textContent = val;
-    localStorage.setItem(uKey("nm"), val); 
+    localStorage.setItem("bbp_nm", val);
   } else {
     disp.textContent = "ثبت نشده";
   }
 }
 
 function sendR(ch){
-  const nm = document.getElementById("dName").value.trim();
-  const am = document.getElementById("pAmt").value.trim();
-  const bk = document.getElementById("bSel").value;
-  const tr = document.getElementById("tCode").value.trim();
-  
+  const nm=dName.value.trim(), am=pAmt.value.trim(), bk=bSel.value, tr=tCode.value.trim();
   if(!nm||!am||!tr) return msg("⚠️ نام، مبلغ و کد پیگیری را کامل وارد کنید");
-  
-  localStorage.setItem(uKey("nm"), nm);
+  localStorage.setItem("bbp_nm", nm);
   updateDriverBadge();
   
-  // دقیقاً همینجا بعد از پر کردن فرم رسید، زمان‌سنج ۳۰ روزه استارت می‌خورد
-  localStorage.setItem(uKey("exp"), Date.now() + M_MS);
-  
-  // پاک کردن زمان هشدار قبلی تا برنامه در دوره جدید سکوت کند
-  localStorage.removeItem(uKey("last_speech"));
-  
-  const successText = `کاربر عزیز ${nm}، بابت پرداختی و تمدید اشتراک از شما تشکر می‌کنیم.`;
-  showPopupBanner("✅ تشکر از پرداخت شما", successText, true);
-  
-  if ('speechSynthesis' in window) {
-    const msgVoice = new SpeechSynthesisUtterance(successText);
-    msgVoice.lang = 'fa-IR'; msgVoice.rate = 0.85; msgVoice.pitch = 1.4;
-    window.speechSynthesis.speak(msgVoice);
-  }
-  
-  upd(); // رفرش کردن تایمر
+  // راننده رسید را ارسال می‌کند؛ پنل به محض تایید مدیر (یا شما) فعال می‌شود
+  msg("📤 رسید شما با موفقیت برای پشتیبانی ارسال شد. پس از تایید، اشتراک فعال خواهد شد.");
   
   const dt = new Intl.DateTimeFormat("fa-IR",{dateStyle:"short",timeStyle:"short"}).format(new Date());
   const tx = `✅ *رسید پرداخت باربرگ بندر پی*\n👤 راننده: ${nm}\n💰 مبلغ: ${am} تومان\n🏦 مقصد: ${bk}\n🔢 پیگیری: ${tr}\n📅 تاریخ: ${dt}`;
-  
   if(ch==="wa") window.open("https://wa.me/989373016550?text="+encodeURIComponent(tx),"_blank");
   else location.href="sms:09373016550?body="+encodeURIComponent(tx);
 }
 
-function msg(t){
-  const tst = document.getElementById("tst");
-  tst.textContent=t;
-  tst.style.display="block";
-  setTimeout(()=>tst.style.display="none",3500);
-}
+function msg(t){tst.textContent=t;tst.style.display="block";setTimeout(()=>tst.style.display="none",3500)}
 
-// بررسی وضعیت هر 30 ثانیه
 setInterval(upd, 30e3);
 
-let dp;
-window.addEventListener("beforeinstallprompt",e=>{
-  e.preventDefault();
-  dp=e;
-  const instBtn = document.getElementById("instBtn");
-  instBtn.style.display="block";
-  instBtn.onclick=()=>{dp.prompt();instBtn.style.display="none"}
-});
+let dp;window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();dp=e;instBtn.style.display="block";instBtn.onclick=()=>{dp.prompt();instBtn.style.display="none"}});
 if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js").catch(()=>{});
 </script>
 </body>
