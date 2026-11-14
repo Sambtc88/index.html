@@ -120,7 +120,7 @@ body{background:linear-gradient(180deg,#dcfce7 0%,#f0fdf4 40%,#f8fafc 100%);colo
     <div class="acts">
       <button class="bsm" onclick="reqNotif()">🔔 اعلان</button>
       <button class="bsm" onclick="testAlrm()">🚨 تست ۳ روزه</button>
-      <!-- دکمه تایید مدیریت با متن کوتاه و شکیل -->
+      <!-- دکمه تایید مدیریت جهت اعمال قطعی دوره ۳۰ روزه -->
       <button id="rchgBtn" class="bsm" style="background:#15803d;color:#fff;" onclick="adminApprove30()">👑 تایید ۳۰ روزه</button>
     </div>
   </div>
@@ -221,7 +221,7 @@ document.addEventListener("DOMContentLoaded", () => {
     loginBtn.addEventListener("touchend", (e) => { e.preventDefault(); doLogin(); });
   }
   
-  const savedName = localStorage.getItem("bbp_nm"] || "";
+  const savedName = localStorage.getItem("bbp_nm") || "";
   document.getElementById("dName").value = savedName;
   if(savedName) document.getElementById("driverNameDisp").textContent = savedName;
   upd();
@@ -243,7 +243,6 @@ function getExp(){
   return +s;
 }
 
-// تابع پخش فایل‌های صوتی واقعی MP3 (reminder.mp3 و thanks.mp3)
 function playAudioMessage(type) {
   const audioId = (type === "thanks") ? "thanksAudio" : "reminderAudio";
   const audioElem = document.getElementById(audioId);
@@ -308,7 +307,6 @@ function upd(){
   }
 }
 
-// دکمه تایید مدیریت جهت اعمال قطعی دوره ۳۰ روزه
 function adminApprove30(){
   const driverName = localStorage.getItem("bbp_nm") || "راننده گرامی";
   if (confirm(`آیا می‌خواهید اشتراک ۳۰ روزه برای ${driverName} تایید و فعال شود؟`)) {
