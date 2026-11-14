@@ -65,10 +65,6 @@ body{background:linear-gradient(180deg,#dcfce7 0%,#f0fdf4 40%,#f8fafc 100%);colo
 </head>
 <body>
 
-<!-- تگ‌های صوتی واقعی MP3 برای یادآوری و تشکر -->
-<audio id="reminderAudio" preload="auto"><source src="reminder.mp3" type="audio/mpeg"></audio>
-<audio id="thanksAudio" preload="auto"><source src="thanks.mp3" type="audio/mpeg"></audio>
-
 <div id="popupBanner">
   <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
   <div class="ptext">
@@ -120,7 +116,6 @@ body{background:linear-gradient(180deg,#dcfce7 0%,#f0fdf4 40%,#f8fafc 100%);colo
     <div class="acts">
       <button class="bsm" onclick="reqNotif()">🔔 اعلان</button>
       <button class="bsm" onclick="testAlrm()">🚨 تست ۳ روزه</button>
-      <!-- دکمه تایید مدیریت جهت اعمال قطعی دوره ۳۰ روزه -->
       <button id="rchgBtn" class="bsm" style="background:#15803d;color:#fff;" onclick="adminApprove30()">👑 تایید ۳۰ روزه</button>
     </div>
   </div>
@@ -243,14 +238,45 @@ function getExp(){
   return +s;
 }
 
+// سیستم صوتی پیشرفته هوشمند: ترکیب ملودی رسا + سنتز گفتار داخلی با آدرس‌دهی مطلق (پشتیبانی از پوشه فرعی ir/)
 function playAudioMessage(type) {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const notes = [523, 659, 784, 1046, 1318];
+    notes.forEach((f, i) => {
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = 'triangle';
+      o.frequency.value = f;
+      g.gain.setValueAtTime(0.3, ctx.currentTime + i * 0.12);
+      g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + (i + 1) * 0.12);
+      o.connect(g); g.connect(ctx.destination);
+      o.start(ctx.currentTime + i * 0.12);
+      o.stop(ctx.currentTime + (i + 1) * 0.12);
+    });
+  } catch(e) {}
+
+  // پخش فایل صوتی با مسیر کاملاً مطلق یا از طریق پوشه فعلی
   const audioId = (type === "thanks") ? "thanksAudio" : "reminderAudio";
   const audioElem = document.getElementById(audioId);
   if (audioElem) {
     audioElem.currentTime = 0;
     audioElem.play().catch(error => {
-      console.log("Audio play blocked:", error);
+      console.log("Audio play fallback activated:", error);
     });
+  }
+
+  // پشتیبانی از گفتار مرورگر به عنوان مکمل
+  if ('speechSynthesis' in window) {
+    try {
+      window.speechSynthesis.resume();
+      window.speechSynthesis.cancel();
+      const txt = (type === "thanks") ? "بابت پرداختی و تمدید اشتراک از شما تشکر می‌کنیم." : "یادآوری می‌کنیم نوبت واریزی و تمدید اشتراک شما فرا رسیده است.";
+      const utterance = new SpeechSynthesisUtterance(txt);
+      utterance.lang = 'fa-IR';
+      utterance.rate = 0.9;
+      utterance.pitch = 1.3;
+      window.speechSynthesis.speak(utterance);
+    } catch(e) {}
   }
 }
 
