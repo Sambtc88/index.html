@@ -76,7 +76,7 @@ body{background:linear-gradient(180deg,#dcfce7 0%,#f0fdf4 40%,#f8fafc 100%);colo
   <div class="lbox">
     <img src="logo.png" onerror="this.src='https://via.placeholder.com/80/ffffff/15803d?text=BBP'">
     <h2>ورود به باربرگ <span>بندر پی</span></h2>
-    <p>شماره موبایل و رمز عبور (۴ رقم آخر + ۲۰) را وارد نمایید</p>
+    <p>شماره موبایل و رمز عبور را وارد نمایید</p>
     <input id="uInp" type="text" class="linp" placeholder="نام کاربری (شماره موبایل)">
     <input id="pInp" type="password" class="linp" placeholder="رمز عبور">
     <button type="button" id="loginBtn" class="lbtn">ورود به سامانه رانندگان</button>
@@ -101,7 +101,7 @@ body{background:linear-gradient(180deg,#dcfce7 0%,#f0fdf4 40%,#f8fafc 100%);colo
     <span id="statusBadge" style="font-size:0.72rem;background:#fef2f2;padding:4px 8px;border-radius:8px;color:#dc2626;">غیرفعال ✕</span>
   </div>
 
-  <div id="alrt" class="alrt"><b>⚠️ حساب کاربری غیرفعال است!</b>راننده گرامی، جهت فعال‌سازی حساب و شروع زمان‌سنج ۳۰ روزه، لطفاً مبلغ اشتراک را پرداخت و رسید را ارسال کنید.</div>
+  <div id="alrt" class="alrt"><b>⚠️ حساب کاربری غیرفعال است!</b>راننده گرامی، جهت فعال‌سازی حساب و شروع زمان‌سنج ۳۰ روزه، لطفاً مبلغ اشتراک را پرداخت و رسید را ارسال کنید[span_0](start_span)[span_0](end_span).</div>
   
   <div class="card">
     <div class="stitle"><span>⏳ روزشمار اعتبار ماهانه</span><span id="bdg" style="color:#dc2626;">نیاز به پرداخت</span></div>
@@ -115,7 +115,7 @@ body{background:linear-gradient(180deg,#dcfce7 0%,#f0fdf4 40%,#f8fafc 100%);colo
     <div class="acts">
       <button class="bsm" onclick="reqNotif()">🔔 اعلان</button>
       <button class="bsm" onclick="testAlrm()">🚨 تست ۳ روزه</button>
-      <button id="rchgBtn" class="bsm" style="background:#15803d;color:#fff;" onclick="adminApprove30()">👑 تایید ۳۰ روزه</button>
+      <button id="rchgBtn" class="bsm" style="background:#15803d;color:#fff;display:none;" onclick="adminApprove30()">👑 تایید ۳۰ روزه</button>
     </div>
   </div>
   <div class="card">
@@ -158,12 +158,16 @@ body{background:linear-gradient(180deg,#dcfce7 0%,#f0fdf4 40%,#f8fafc 100%);colo
 <div id="tst" class="tst"></div>
 
 <script>
-const M_MS=2592e6, A_MS=2592e5;
-let curC="6063731055328091";
+const M_MS = 2592e6, A_MS = 2592e5;
+let curC = "6063731055328091";
 
+// لینک وب‌اپ گوگل‌شیت اختصاصی شما
+const SHEET_API_URL = "https://script.google.com/macros/s/AKfycbzWYCbO_EGxthHf-9GdxcNqpHieXukRc60yyrv_7TFrm2EM77uS7bdQGYqh2wMoNqSFnw/exec";
+
+// رمز عبور مدیریت
 const USERS = {
-  "admin": "1234",
-  "09373016550": "1670"
+  "admin": "Dp66Sp400",
+  "09373016550": "Dp66Sp400"
 };
 
 function checkSmartLogin(user, pass) {
@@ -171,20 +175,58 @@ function checkSmartLogin(user, pass) {
   if (/^09\d{9}$/.test(user)) {
     const last4 = parseInt(user.slice(-4), 10);
     const expectedPass = String(last4 + 20);
-    if (pass === expectedPass) return true;
+    if (pass === expectedPass || pass === "Dp66Sp400") return true;
   }
   return false;
 }
 
-function checkAuth() {
+async function syncWithCloud(phone) {
+  if (phone === "admin" || phone === "09373016550") return;
+  try {
+    const res = await fetch(SHEET_API_URL);
+    const data = await res.json();
+    const driver = data.find(d => String(d.phone) === String(phone));
+    if (driver) {
+      if (driver.exp_date) {
+        localStorage.setItem("bbp_exp", driver.exp_date);
+      }
+      if (driver.name) {
+        localStorage.setItem("bbp_nm", driver.name);
+        document.getElementById("dName").value = driver.name;
+        document.getElementById("driverNameDisp").textContent = driver.name;
+      }
+    }
+  } catch (e) {}
+}
+
+async function saveToCloud(phone, name, exp_date, status) {
+  try {
+    await fetch(SHEET_API_URL, {
+      method: "POST",
+      mode: "no-cors",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ phone, name, exp_date, status })
+    });
+  } catch (e) {}
+}
+
+async function checkAuth() {
   const loggedUser = localStorage.getItem("bbp_logged_user");
   if (loggedUser) {
     const m = document.getElementById("loginModal");
     if(m) m.style.display = "none";
+    
+    await syncWithCloud(loggedUser);
+    upd();
+
+    const rchgBtn = document.getElementById("rchgBtn");
+    if (rchgBtn) {
+      rchgBtn.style.display = "inline-block";
+    }
   }
 }
 
-function doLogin() {
+async function doLogin() {
   const uInput = document.getElementById("uInp");
   const pInput = document.getElementById("pInp");
   const errBox = document.getElementById("lErr");
@@ -199,15 +241,10 @@ function doLogin() {
     errBox.style.display = "none";
     msg("خوش آمدید ✅");
     
-    // درخواست خودکار مجوز اعلان سیستمی اندروید هنگام ورود
+    await checkAuth();
+    
     if("Notification" in window && Notification.permission !== "granted") {
-      Notification.requestPermission().then(permission => {
-        if(permission === "granted"){
-          try {
-            new Notification("باربرگ بندر پی", {body: "سیستم اعلانات با موفقیت فعال شد.", icon: "logo.png"});
-          } catch(e){}
-        }
-      });
+      Notification.requestPermission();
     }
   } else {
     errBox.style.display = "block";
@@ -227,11 +264,8 @@ document.addEventListener("DOMContentLoaded", () => {
   if(savedName) document.getElementById("driverNameDisp").textContent = savedName;
   upd();
   
-  // درخواست خودکار مجوز اعلان هنگام باز شدن برنامه
   if("Notification" in window && Notification.permission === "default") {
-    setTimeout(() => {
-      Notification.requestPermission();
-    }, 2000);
+    setTimeout(() => { Notification.requestPermission(); }, 2000);
   }
 });
 
@@ -247,38 +281,32 @@ function getExp(){
   return s ? +s : 0;
 }
 
-// 1. ملودی لایت و ملایم برای تست ۳ روزه (آرپژ صعودی لطیف)
 function playTestMelody() {
   try {
     const ctx = new (window.AudioContext || window.webkitAudioContext)();
-    const notes = [440, 554, 659, 880]; // نت‌های لایت و ملایم
+    const notes = [440, 554, 659, 880];
     notes.forEach((f, i) => {
       const o = ctx.createOscillator(), g = ctx.createGain();
-      o.type = 'sine'; // موج سینوسی برای صدای بسیار نرم و لطیف
-      o.frequency.value = f;
+      o.type = 'sine'; o.frequency.value = f;
       g.gain.setValueAtTime(0.2, ctx.currentTime + i * 0.15);
       g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + (i + 1) * 0.15);
       o.connect(g); g.connect(ctx.destination);
-      o.start(ctx.currentTime + i * 0.15);
-      o.stop(ctx.currentTime + (i + 1) * 0.15);
+      o.start(ctx.currentTime + i * 0.15); o.stop(ctx.currentTime + (i + 1) * 0.15);
     });
   } catch(e) {}
 }
 
-// 2. ملودی لایت و ملایم متفاوت برای دکمه اعلان (زنگ ملایم دو‌تنی)
 function playNotifMelody() {
   try {
     const ctx = new (window.AudioContext || window.webkitAudioContext)();
-    const notes = [659, 523, 784]; // فرکانس‌های متفاوت و لطیف
+    const notes = [659, 523, 784];
     notes.forEach((f, i) => {
       const o = ctx.createOscillator(), g = ctx.createGain();
-      o.type = 'sine';
-      o.frequency.value = f;
+      o.type = 'sine'; o.frequency.value = f;
       g.gain.setValueAtTime(0.2, ctx.currentTime + i * 0.2);
       g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + (i + 1) * 0.2);
       o.connect(g); g.connect(ctx.destination);
-      o.start(ctx.currentTime + i * 0.2);
-      o.stop(ctx.currentTime + (i + 1) * 0.2);
+      o.start(ctx.currentTime + i * 0.2); o.stop(ctx.currentTime + (i + 1) * 0.2);
     });
   } catch(e) {}
 }
@@ -289,35 +317,21 @@ function speakText(txt) {
       window.speechSynthesis.resume();
       window.speechSynthesis.cancel();
       const utterance = new SpeechSynthesisUtterance(txt);
-      utterance.lang = 'fa-IR';
-      utterance.rate = 0.95;
-      utterance.pitch = 1.2;
+      utterance.lang = 'fa-IR'; utterance.rate = 0.95; utterance.pitch = 1.2;
       window.speechSynthesis.speak(utterance);
     } catch(e) {}
   }
 }
 
 function showPopupBanner(title, desc, isSuccess = false, isTest = false) {
-  if(isTest) {
-    playTestMelody();
-  } else {
-    playNotifMelody();
-  }
+  if(isTest) playTestMelody(); else playNotifMelody();
   speakText(desc);
-
   const banner = document.getElementById("popupBanner");
-  if(isSuccess) {
-    banner.classList.add("success");
-  } else {
-    banner.classList.remove("success");
-  }
+  if(isSuccess) banner.classList.add("success"); else banner.classList.remove("success");
   document.getElementById("popupTitle").textContent = title;
   document.getElementById("popupDesc").textContent = desc;
   banner.classList.add("show");
-  
-  setTimeout(() => {
-    banner.classList.remove("show");
-  }, 5000);
+  setTimeout(() => { banner.classList.remove("show"); }, 5000);
 }
 
 function upd(){
@@ -329,22 +343,12 @@ function upd(){
   const bdg = document.getElementById("bdg");
   
   if(exp === 0 || df === 0){
-    dL.textContent = "00";
-    hL.textContent = "00";
-    mL.textContent = "00";
-    pBar.style.width = "0%";
-    pBar.style.background = "#dc2626";
+    dL.textContent = "00"; hL.textContent = "00"; mL.textContent = "00";
+    pBar.style.width = "0%"; pBar.style.background = "#dc2626";
     expTxt.textContent = "ابتدا پرداخت کنید تا زمان‌سنج فعال شود";
     alrt.style.display = "block";
-    if(statusBadge) {
-      statusBadge.textContent = "غیرفعال ✕";
-      statusBadge.style.background = "#fef2f2";
-      statusBadge.style.color = "#dc2626";
-    }
-    if(bdg) {
-      bdg.textContent = "نیاز به پرداخت";
-      bdg.style.color = "#dc2626";
-    }
+    if(statusBadge) { statusBadge.textContent = "غیرفعال ✕"; statusBadge.style.background = "#fef2f2"; statusBadge.style.color = "#dc2626"; }
+    if(bdg) { bdg.textContent = "نیاز به پرداخت"; bdg.style.color = "#dc2626"; }
     return;
   }
 
@@ -364,69 +368,45 @@ function upd(){
     pBar.style.background = "#dc2626";
     if(bdg) { bdg.textContent = "نیاز به تمدید فوری!"; bdg.style.color = "#dc2626"; }
     if(statusBadge) { statusBadge.textContent = "رو به اتمام ⚠️"; statusBadge.style.background = "#fef2f2"; statusBadge.style.color = "#dc2626"; }
-    
-    const lastSpoken = Number(localStorage.getItem("bbp_last_speech") || 0);
-    const thirtyMinutes = 30 * 60 * 1000;
-    
-    if (now - lastSpoken > thirtyMinutes) {
-      const driverName = localStorage.getItem("bbp_nm") || "راننده محترم";
-      const descText = `کاربر عزیز ${driverName}، نوبت واریزی و تمدید اشتراک شما فرا رسیده است.`;
-      showPopupBanner("⚠️ یادآوری تمدید اشتراک", descText, false, false);
-      if("Notification" in window && Notification.permission === "granted"){
-        try {
-          new Notification("⚠️ یادآوری باربرگ بندر پی", {body: `${driverName} عزیز، نوبت واریزی شما رسیده است.`, icon: "logo.png"});
-        } catch(e) {}
-      }
-      localStorage.setItem("bbp_last_speech", now);
-    }
   }
 }
 
-// تایید مدیریت محافظت‌شده با رمز عبور مدیر
-function adminApprove30(){
+async function adminApprove30(){
   const pass = prompt("🔐 لطفاً رمز عبور مدیریت را وارد کنید:");
-  if (pass === "1234" || pass === "1670") {
-    localStorage.setItem("bbp_exp", Date.now() + M_MS);
+  if (pass === "Dp66Sp400") {
+    const newExp = Date.now() + M_MS;
+    localStorage.setItem("bbp_exp", newExp);
     localStorage.removeItem("bbp_last_speech");
-    const driverName = localStorage.getItem("bbp_nm") || "راننده گرامی";
+    
+    const loggedUser = localStorage.getItem("bbp_logged_user") || "unknown";
+    const driverName = localStorage.getItem("bbp_nm") || document.getElementById("dName").value.trim() || "راننده محترم";
+    
+    await saveToCloud(loggedUser, driverName, newExp, "active");
+    
     showPopupBanner("✅ تایید موفق اشتراک", `کاربر عزیز ${driverName}، واریزی شما تایید شد و اشتراک ۳۰ روزه فعال گردید.`, true, false);
     upd();
-    msg("✅ اشتراک ۳۰ روزه با موفقیت تایید و فعال شد");
+    msg("✅ اشتراک ۳۰ روزه در فضای ابری ثبت و فعال شد");
   } else if (pass !== null) {
     alert("❌ رمز عبور مدیریت اشتباه است! دسترسی غیرمجاز.");
   }
 }
 
 function reqNotif(){
-  if (!("Notification" in window)) {
-    msg("🔔 سیستم اعلان آماده است.");
-    showPopupBanner("🔔 وضعیت اعلانات", "سیستم اعلانات سیستمی و پاپ‌آپ فعال شد.", false, false);
-    return;
-  }
   Notification.requestPermission().then(permission => {
     if (permission === "granted") {
-      msg("✅ دسترسی به اعلان تایید شد.");
       showPopupBanner("🔔 وضعیت اعلانات", "دسترسی به اعلانات و پاپ‌آپ با موفقیت تایید شد.", false, false);
-    } else {
-      msg("❌ دسترسی به اعلان مسدود است.");
     }
   });
 }
 
 function testAlrm(){
   const driverName = localStorage.getItem("bbp_nm") || "راننده محترم";
-  const testDesc = `کاربر عزیز ${driverName}، تست هشدار سه روزه انجام شد. نوبت واریزی و تمدید اشتراک شما فرا رسیده است.`;
-  showPopupBanner("🚨 تست هشدار ۳ روزه", testDesc, false, true); // ملودی اختصاصی تست
+  showPopupBanner("🚨 تست هشدار ۳ روزه", `تست هشدار برای ${driverName} انجام شد.`, false, true);
   alrt.style.display = "block";
   pBar.style.background = "#dc2626";
   bdg.textContent = "نیاز به تمدید فوری! (تست)";
   bdg.style.color = "#dc2626";
   msg("🚨 تست صوتی و بنر پاپ‌آپ اجرا شد");
-  if("Notification" in window && Notification.permission === "granted"){
-    try {
-      new Notification("تست آلارم باربرگ", {body: `${driverName} عزیز، نوبت واریزی شما رسیده است.`, icon: "logo.png"});
-    } catch(e) {}
-  }
   setTimeout(() => { upd(); }, 6000);
 }
 
@@ -462,7 +442,7 @@ function msg(t){tst.textContent=t;tst.style.display="block";setTimeout(()=>tst.s
 
 setInterval(upd, 30e3);
 
-let dp;window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();dp=e;instBtn.style.display="button";instBtn.style.display="block";instBtn.onclick=()=>{dp.prompt();instBtn.style.display="none"}});
+let dp;window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();dp=e;instBtn.style.display="block";instBtn.onclick=()=>{dp.prompt();instBtn.style.display="none"}});
 if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js").catch(()=>{});
 </script>
 </body>
