@@ -101,7 +101,7 @@ body{background:linear-gradient(180deg,#dcfce7 0%,#f0fdf4 40%,#f8fafc 100%);colo
     <span id="statusBadge" style="font-size:0.72rem;background:#fef2f2;padding:4px 8px;border-radius:8px;color:#dc2626;">غیرفعال ✕</span>
   </div>
 
-  <div id="alrt" class="alrt"><b>⚠️ حساب کاربری غیرفعال است!</b>راننده گرامی، جهت فعال‌سازی حساب و شروع زمان‌سنج ۳۰ روزه، لطفاً مبلغ اشتراک را پرداخت و رسید را ارسال کنید[span_0](start_span)[span_0](end_span).</div>
+  <div id="alrt" class="alrt"><b>⚠️ حساب کاربری غیرفعال است!</b>راننده گرامی، جهت فعال‌سازی حساب و شروع زمان‌سنج ۳۰ روزه، لطفاً مبلغ اشتراک را پرداخت و رسید را ارسال کنید.</div>
   
   <div class="card">
     <div class="stitle"><span>⏳ روزشمار اعتبار ماهانه</span><span id="bdg" style="color:#dc2626;">نیاز به پرداخت</span></div>
@@ -115,7 +115,6 @@ body{background:linear-gradient(180deg,#dcfce7 0%,#f0fdf4 40%,#f8fafc 100%);colo
     <div class="acts">
       <button class="bsm" onclick="reqNotif()">🔔 اعلان</button>
       <button class="bsm" onclick="testAlrm()">🚨 تست ۳ روزه</button>
-      <!-- دکمه تایید مدیریت محافظت‌شده با رمز عبور مدیر -->
       <button id="rchgBtn" class="bsm" style="background:#15803d;color:#fff;" onclick="adminApprove30()">👑 تایید ۳۰ روزه</button>
     </div>
   </div>
@@ -200,8 +199,15 @@ function doLogin() {
     errBox.style.display = "none";
     msg("خوش آمدید ✅");
     
+    // درخواست خودکار مجوز اعلان سیستمی اندروید هنگام ورود
     if("Notification" in window && Notification.permission !== "granted") {
-      Notification.requestPermission();
+      Notification.requestPermission().then(permission => {
+        if(permission === "granted"){
+          try {
+            new Notification("باربرگ بندر پی", {body: "سیستم اعلانات با موفقیت فعال شد.", icon: "logo.png"});
+          } catch(e){}
+        }
+      });
     }
   } else {
     errBox.style.display = "block";
@@ -220,6 +226,13 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("dName").value = savedName;
   if(savedName) document.getElementById("driverNameDisp").textContent = savedName;
   upd();
+  
+  // درخواست خودکار مجوز اعلان هنگام باز شدن برنامه
+  if("Notification" in window && Notification.permission === "default") {
+    setTimeout(() => {
+      Notification.requestPermission();
+    }, 2000);
+  }
 });
 
 function doLogout() {
@@ -229,35 +242,53 @@ function doLogout() {
   }
 }
 
-// اگر حساب فعال نشده باشد مقدار ۰ برمی‌گرداند تا حساب غیرفعال بماند
 function getExp(){
   let s = localStorage.getItem("bbp_exp");
   return s ? +s : 0;
 }
 
-// سیستم صوتی رسا همراه با ویس خوانش متن (SpeechSynthesis)
-function playAudioMessage(textToSpeak) {
+// 1. ملودی لایت و ملایم برای تست ۳ روزه (آرپژ صعودی لطیف)
+function playTestMelody() {
   try {
     const ctx = new (window.AudioContext || window.webkitAudioContext)();
-    const notes = [523, 659, 784, 1046, 1318];
+    const notes = [440, 554, 659, 880]; // نت‌های لایت و ملایم
     notes.forEach((f, i) => {
       const o = ctx.createOscillator(), g = ctx.createGain();
-      o.type = 'triangle';
+      o.type = 'sine'; // موج سینوسی برای صدای بسیار نرم و لطیف
       o.frequency.value = f;
-      g.gain.setValueAtTime(0.3, ctx.currentTime + i * 0.12);
-      g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + (i + 1) * 0.12);
+      g.gain.setValueAtTime(0.2, ctx.currentTime + i * 0.15);
+      g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + (i + 1) * 0.15);
       o.connect(g); g.connect(ctx.destination);
-      o.start(ctx.currentTime + i * 0.12);
-      o.stop(ctx.currentTime + (i + 1) * 0.12);
+      o.start(ctx.currentTime + i * 0.15);
+      o.stop(ctx.currentTime + (i + 1) * 0.15);
     });
   } catch(e) {}
+}
 
-  // خواندن متنی که فرستاده شده به صورت ویس/گفتار
+// 2. ملودی لایت و ملایم متفاوت برای دکمه اعلان (زنگ ملایم دو‌تنی)
+function playNotifMelody() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const notes = [659, 523, 784]; // فرکانس‌های متفاوت و لطیف
+    notes.forEach((f, i) => {
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = 'sine';
+      o.frequency.value = f;
+      g.gain.setValueAtTime(0.2, ctx.currentTime + i * 0.2);
+      g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + (i + 1) * 0.2);
+      o.connect(g); g.connect(ctx.destination);
+      o.start(ctx.currentTime + i * 0.2);
+      o.stop(ctx.currentTime + (i + 1) * 0.2);
+    });
+  } catch(e) {}
+}
+
+function speakText(txt) {
   if ('speechSynthesis' in window) {
     try {
       window.speechSynthesis.resume();
       window.speechSynthesis.cancel();
-      const utterance = new SpeechSynthesisUtterance(textToSpeak);
+      const utterance = new SpeechSynthesisUtterance(txt);
       utterance.lang = 'fa-IR';
       utterance.rate = 0.95;
       utterance.pitch = 1.2;
@@ -266,8 +297,14 @@ function playAudioMessage(textToSpeak) {
   }
 }
 
-function showPopupBanner(title, desc, isSuccess = false) {
-  playAudioMessage(desc);
+function showPopupBanner(title, desc, isSuccess = false, isTest = false) {
+  if(isTest) {
+    playTestMelody();
+  } else {
+    playNotifMelody();
+  }
+  speakText(desc);
+
   const banner = document.getElementById("popupBanner");
   if(isSuccess) {
     banner.classList.add("success");
@@ -334,7 +371,7 @@ function upd(){
     if (now - lastSpoken > thirtyMinutes) {
       const driverName = localStorage.getItem("bbp_nm") || "راننده محترم";
       const descText = `کاربر عزیز ${driverName}، نوبت واریزی و تمدید اشتراک شما فرا رسیده است.`;
-      showPopupBanner("⚠️ یادآوری تمدید اشتراک", descText);
+      showPopupBanner("⚠️ یادآوری تمدید اشتراک", descText, false, false);
       if("Notification" in window && Notification.permission === "granted"){
         try {
           new Notification("⚠️ یادآوری باربرگ بندر پی", {body: `${driverName} عزیز، نوبت واریزی شما رسیده است.`, icon: "logo.png"});
@@ -345,14 +382,14 @@ function upd(){
   }
 }
 
-// تایید مدیریت محافظت‌شده با رمز عبور مدیر (فقط با رمز شما فعال می‌شود)
+// تایید مدیریت محافظت‌شده با رمز عبور مدیر
 function adminApprove30(){
   const pass = prompt("🔐 لطفاً رمز عبور مدیریت را وارد کنید:");
   if (pass === "1234" || pass === "1670") {
     localStorage.setItem("bbp_exp", Date.now() + M_MS);
     localStorage.removeItem("bbp_last_speech");
     const driverName = localStorage.getItem("bbp_nm") || "راننده گرامی";
-    showPopupBanner("✅ تایید موفق اشتراک", `کاربر عزیز ${driverName}، واریزی شما تایید شد و اشتراک ۳۰ روزه فعال گردید.`, true);
+    showPopupBanner("✅ تایید موفق اشتراک", `کاربر عزیز ${driverName}، واریزی شما تایید شد و اشتراک ۳۰ روزه فعال گردید.`, true, false);
     upd();
     msg("✅ اشتراک ۳۰ روزه با موفقیت تایید و فعال شد");
   } else if (pass !== null) {
@@ -363,13 +400,13 @@ function adminApprove30(){
 function reqNotif(){
   if (!("Notification" in window)) {
     msg("🔔 سیستم اعلان آماده است.");
-    showPopupBanner("🔔 وضعیت اعلانات", "سیستم پاپ‌آپ و هشدارهای صوتی فعال شد.", true);
+    showPopupBanner("🔔 وضعیت اعلانات", "سیستم اعلانات سیستمی و پاپ‌آپ فعال شد.", false, false);
     return;
   }
   Notification.requestPermission().then(permission => {
     if (permission === "granted") {
       msg("✅ دسترسی به اعلان تایید شد.");
-      showPopupBanner("🔔 وضعیت اعلانات", "سیستم اعلانات سیستمی و پاپ‌آپ تایید شد.", true);
+      showPopupBanner("🔔 وضعیت اعلانات", "دسترسی به اعلانات و پاپ‌آپ با موفقیت تایید شد.", false, false);
     } else {
       msg("❌ دسترسی به اعلان مسدود است.");
     }
@@ -379,7 +416,7 @@ function reqNotif(){
 function testAlrm(){
   const driverName = localStorage.getItem("bbp_nm") || "راننده محترم";
   const testDesc = `کاربر عزیز ${driverName}، تست هشدار سه روزه انجام شد. نوبت واریزی و تمدید اشتراک شما فرا رسیده است.`;
-  showPopupBanner("🚨 تست هشدار ۳ روزه", testDesc);
+  showPopupBanner("🚨 تست هشدار ۳ روزه", testDesc, false, true); // ملودی اختصاصی تست
   alrt.style.display = "block";
   pBar.style.background = "#dc2626";
   bdg.textContent = "نیاز به تمدید فوری! (تست)";
@@ -413,7 +450,7 @@ function sendR(ch){
   localStorage.setItem("bbp_nm", nm);
   updateDriverBadge();
   
-  msg("📤 رسید شما ارسال شد. پس از تایید مدیریت، حساب شما ۳۰ روزه فعال خواهد شد[span_1](start_span)[span_1](end_span).");
+  msg("📤 رسید شما ارسال شد. پس از تایید مدیریت، حساب شما ۳۰ روزه فعال خواهد شد.");
   
   const dt = new Intl.DateTimeFormat("fa-IR",{dateStyle:"short",timeStyle:"short"}).format(new Date());
   const tx = `✅ *رسید پرداخت باربرگ بندر پی*\n👤 راننده: ${nm}\n💰 مبلغ: ${am} تومان\n🏦 مقصد: ${bk}\n🔢 پیگیری: ${tr}\n📅 تاریخ: ${dt}`;
@@ -425,7 +462,7 @@ function msg(t){tst.textContent=t;tst.style.display="block";setTimeout(()=>tst.s
 
 setInterval(upd, 30e3);
 
-let dp;window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();dp=e;instBtn.style.display="block";instBtn.onclick=()=>{dp.prompt();instBtn.style.display="none"}});
+let dp;window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();dp=e;instBtn.style.display="button";instBtn.style.display="block";instBtn.onclick=()=>{dp.prompt();instBtn.style.display="none"}});
 if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js").catch(()=>{});
 </script>
 </body>
