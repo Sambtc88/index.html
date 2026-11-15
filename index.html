@@ -161,10 +161,8 @@ body{background:linear-gradient(180deg,#dcfce7 0%,#f0fdf4 40%,#f8fafc 100%);colo
 const M_MS = 2592e6, A_MS = 2592e5;
 let curC = "6063731055328091";
 
-// لینک وب‌اپ گوگل‌شیت اختصاصی شما
-const SHEET_API_URL = "https://script.google.com/macros/s/AKfycbzWYCbO_EGxthHf-9GdxcNqpHieXukRc60yyrv_7TFrm2EM77uS7bdQGYqh2wMoNqSFnw/exec";
+const SHEET_API_URL = "https://script.google.com/macros/s/AKfycbzWYCbO_EGxthHf-9GdxcNqpHieXukRc60yyrv_7TFrm2EM77uS7bdQGYqh2wMoNqSFmw/exec";
 
-// رمز عبور مدیریت
 const USERS = {
   "admin": "Dp66Sp400",
   "09373016550": "Dp66Sp400"
@@ -392,11 +390,12 @@ async function adminApprove30(){
 }
 
 function reqNotif(){
-  Notification.requestPermission().then(permission => {
-    if (permission === "granted") {
-      showPopupBanner("🔔 وضعیت اعلانات", "دسترسی به اعلانات و پاپ‌آپ با موفقیت تایید شد.", false, false);
-    }
-  });
+  playNotifMelody();
+  speakText("سیستم اعلانات و پاپ آپ فعال شد.");
+  showPopupBanner("🔔 وضعیت اعلانات", "سیستم اعلانات سیستمی و صوتی با موفقیت فعال شد.", false, false);
+  if("Notification" in window) {
+    Notification.requestPermission();
+  }
 }
 
 function testAlrm(){
